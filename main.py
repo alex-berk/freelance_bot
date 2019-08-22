@@ -9,7 +9,7 @@ def bot_send_msg(token, chat, text, url):
 						{'text': 'Просмотреть', 'url': url},
 						{'text': 'Share (пока не работает)', 'switch_inline_query': "inline_share_command"}
 						]]}
-	payload = {'chat_id': chat, 'text': text, 'parse_mode':'markdown', 'disable_web_page_preview': True, 'reply_markup': json.dumps(reply_markup)}
+	payload = {'chat_id': chat, 'text': text, 'parse_mode':'html', 'disable_web_page_preview': True, 'reply_markup': json.dumps(reply_markup)}
 	r = requests.post(f'https://api.telegram.org/bot{token}/sendMessage', params=payload)
 	success = json.loads(r.text)['ok']
 	if not success:
@@ -36,7 +36,7 @@ def tasks_sender(task_list):
 			print(task['title'], task['price'])
 		if task['id'] not in processed_tasks and keyword_search(keywords, task['title']) or keyword_search(keywords, task['tags']):
 			tags = ', '.join(task['tags'])
-			msg = f"*{task['title']}*\n{task['price']}\n_{tags}_"
+			msg = f"<b>{task['title']}</b>\n{task['price']}\n<i>{tags}</i>"
 			bot_send_msg(bot_token, chat_id, msg, task['url'])
 
 def get_tasks(retry=False):
