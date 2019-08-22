@@ -13,10 +13,7 @@ def bot_send_msg(token, chat, text, url):
 	r = requests.post(f'https://api.telegram.org/bot{token}/sendMessage', params=payload)
 	success = json.loads(r.text)['ok']
 	if not success:
-		print('Message not been sent!, Got response:\n', r.text, text)
-		print('Gonna try to resend in one minute')
-		time.sleep(60)
-		print('Couldn\'t send message:', text, url)
+		print('Message not been sent!, Got response:', r.text, text, url, sep='\n')
 	return success
 
 def keyword_search(keywords, body):
