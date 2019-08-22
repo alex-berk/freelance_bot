@@ -9,15 +9,14 @@ logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H:%M:%S')
 
-try: file_handler = logging.FileHandler(os.path.join('logs', str(datetime.date.today()) + '.log'))
-except FileNotFoundError:
-	os.mkdir('logs')
-	file_handler = logging.FileHandler(os.path.join('logs', str(datetime.date.today()) + '.log'))
+if not os.path.exists('logs'): os.mkdir('logs')
+a_date = datetime.date.today()
+file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
 file_handler.setFormatter(formatter)
 
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.INFO)
-stream_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', '%H:%M:%S'))
+stream_handler.setFormatter(logging.Formatter('\n[%(asctime)s] %(message)s', '%H:%M:%S'))
 
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
@@ -37,7 +36,7 @@ def keyword_search(keywords, body):
 
 def tasks_sender(task_list): 
 	for task in task_list[::-1]:
-		print(f"{task['title']}, {task['price']}, {task['price_format']}\n")
+		print(f"{task['title']}, {task['price']}, {task['price_format']}")
 		if keyword_search(keywords, task['tags']) or keyword_search(keywords, task['title']):
 			logger.debug(f"Found task {task['id']}")
 			bot.send_job(task)
@@ -74,6 +73,13 @@ if __name__ == '__main__':
 	logger.debug(f"New tasks {processed_tasks}")
 	time.sleep(60)
 	while True:
+
+		if a_date != datetime.date.today():
+			logger.removeHandler(file_handler)
+			file_handler = logging.FileHandler(os.path.join('logs', str(datetime.date.today()) + '.log'))
+			file_handler.setFormatter(formatter)
+			logger.addHandler(file_handler)
+
 		new_tasks = [task for task in get_tasks() if task['id'] not in processed_tasks]
 		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
 		logger.info("Sent request for the new tasks")
