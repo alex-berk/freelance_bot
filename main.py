@@ -4,15 +4,19 @@ import requests
 import json
 
 
-def bot_send_msg(token, chat, text):
-	payload = {'chat_id': chat, 'text': text, 'parse_mode':'markdown', 'disable_web_page_preview': True}
+def bot_send_msg(token, chat, text, url):
+	reply_markup = {'inline_keyboard':[[
+						{'text': 'Просмотреть', 'url': url},
+						{'text': 'Share (пока не работает)', 'switch_inline_query': "inline_share_command"}
+						]]}
+	payload = {'chat_id': chat, 'text': text, 'parse_mode':'markdown', 'disable_web_page_preview': True, 'reply_markup': json.dumps(reply_markup)}
 	r = requests.post(f'https://api.telegram.org/bot{token}/sendMessage', params=payload)
 	success = json.loads(r.text)['ok']
 	if not success:
 		print('Message not been sent!, Got response:\n', r.text, text)
 		print('Gonna try to resend in one minute')
 		time.sleep(60)
-		bot_send_msg(token, chat, text)
+		bot_send_msg(token, chat, text, url)
 	return success
 
 def keyword_search(keywords, body):
@@ -35,8 +39,8 @@ def tasks_sender(task_list):
 			price = task['price']
 			url = task['url']
 			tags = ', '.join(task['tags'])
-			msg = f'[{title}]({url})\n*{price}*\n_{tags}_'
-			bot_send_msg(bot_token, chat_id, msg)
+			msg = f'*{title}*\n{price}\n_{tags}_'
+			bot_send_msg(bot_token, chat_id, msg, url)
 
 def get_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
