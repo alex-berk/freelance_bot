@@ -10,7 +10,10 @@ def bot_send_msg(token, chat, text):
 	success = json.loads(r.text)['ok']
 	if not success:
 		print('Message not been sent!, Got response:\n', r.text, text)
-	return success
+		print('Gonna try to resend in one minute')
+		time.sleep(60)
+		bot_send_msg(token, chat, text)
+	return successs
 
 def keyword_search(keywords, body):
 	try:
