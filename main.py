@@ -16,7 +16,7 @@ def bot_send_msg(token, chat, text, url):
 		print('Message not been sent!, Got response:\n', r.text, text)
 		print('Gonna try to resend in one minute')
 		time.sleep(60)
-		bot_send_msg(token, chat, text, url)
+		print('Couldn\'t send message:', text, url)
 	return success
 
 def keyword_search(keywords, body):
@@ -34,7 +34,7 @@ def tasks_sender(task_list):
 	for task in task_list[::-1]:
 		if task['id'] not in processed_tasks:
 			print(task['title'], task['price'])
-		if task['id'] not in processed_tasks:# and keyword_search(keywords, task['title']) or keyword_search(keywords, task['tags']):
+		if task['id'] not in processed_tasks and keyword_search(keywords, task['title']) or keyword_search(keywords, task['tags']):
 			tags = ', '.join(task['tags'])
 			msg = f"*{task['title']}*\n{task['price']}\n_{tags}_"
 			bot_send_msg(bot_token, chat_id, msg, task['url'])
@@ -66,7 +66,7 @@ if __name__ == '__main__':
 	bot_token = os.environ['BOT_TOKEN']
 	chat_id = os.environ['CHAT_ID']
 	processed_tasks = []
-	keywords = ['python', 'питон', 'пайтон', 'парс', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть']
+	keywords = ['python', 'питон', 'пайтон', 'парс', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
 
 	processed_tasks = [task['id'] for task in get_tasks()]
 	while True:
