@@ -34,13 +34,10 @@ def tasks_sender(task_list):
 	for task in task_list[::-1]:
 		if task['id'] not in processed_tasks:
 			print(task['title'], task['price'])
-		if task['id'] not in processed_tasks and keyword_search(keywords, task['title']) or keyword_search(keywords, task['tags']):
-			title = task['title']
-			price = task['price']
-			url = task['url']
+		if task['id'] not in processed_tasks:# and keyword_search(keywords, task['title']) or keyword_search(keywords, task['tags']):
 			tags = ', '.join(task['tags'])
-			msg = f'*{title}*\n{price}\n_{tags}_'
-			bot_send_msg(bot_token, chat_id, msg, url)
+			msg = f"*{task['title']}*\n{task['price']}\n_{tags}_"
+			bot_send_msg(bot_token, chat_id, msg, task['url'])
 
 def get_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
