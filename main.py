@@ -5,7 +5,8 @@ import json
 
 
 def bot_send_msg(token, chat, text):
-	r = requests.get(f'https://api.telegram.org/bot{token}/sendMessage?chat_id={chat}&text={text}')
+	payload = {'chat_id': chat, 'text': text, 'parse_mode':'markdown', 'disable_web_page_preview': True}
+	r = requests.post(f'https://api.telegram.org/bot{token}/sendMessage', params=payload)
 	success = json.loads(r.text)['ok']
 	if not success:
 		print('Message not been sent!, Got response:\n', r.text, text)
