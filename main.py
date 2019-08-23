@@ -26,7 +26,7 @@ def tasks_sender(task_list):
 
 def get_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
-	headers = {	'User-Agent':'Python Telegram bot',
+	headers = {	'User-Agent':'Telegram Freelance bot',
 				'Accept': 'application/json',
 				'X-App-Version': '1'}
 	try:
@@ -47,13 +47,12 @@ def get_tasks(retry=False):
 
 if __name__ == '__main__':
 	bot = BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
-	keywords = ['python', 'питон', 'пайтон', 'парс', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
+	keywords = ['python', 'питон', 'пайтон', 'парс', 'парсер', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
 
 	processed_tasks = [task['id'] for task in get_tasks()]
 	time.sleep(60)
 	while True:
 		print(f"\n[{datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')}] Sent request")
-		print(processed_tasks)
 		new_tasks = [task for task in get_tasks() if task['id'] not in processed_tasks]
 		tasks_sender(new_tasks)
 		time.sleep(60 * 5)

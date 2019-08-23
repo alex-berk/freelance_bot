@@ -1,6 +1,6 @@
-
 import requests, json
 import os
+
 
 class BotNotifier():
 	def __init__(self, token, admin_chat_id):
