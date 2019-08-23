@@ -2,19 +2,8 @@ import os
 import time, datetime
 import requests
 import json
+from bot_notifier import Bot_Notifier
 
-
-def bot_send_msg(token, chat, text, url):
-	reply_markup = {'inline_keyboard':[[
-						{'text': 'Просмотреть', 'url': url},
-						{'text': 'Share (пока не работает)', 'switch_inline_query': "inline_share_command"}
-						]]}
-	payload = {'chat_id': chat, 'text': text, 'parse_mode':'html', 'disable_web_page_preview': True, 'reply_markup': json.dumps(reply_markup)}
-	r = requests.post(f'https://api.telegram.org/bot{token}/sendMessage', params=payload)
-	success = json.loads(r.text)['ok']
-	if not success:
-		print('Message not been sent!, Got response:', r.text, text, url, sep='\n')
-	return success
 
 def keyword_search(keywords, body):
 	try:
@@ -34,7 +23,7 @@ def tasks_sender(task_list):
 		if task['id'] not in processed_tasks and keyword_search(keywords, task['title']) or keyword_search(keywords, task['tags']):
 			tags = ', '.join(task['tags'])
 			msg = f"<b>{task['title']}</b>\n{task['price']}\n<i>{tags}</i>"
-			bot_send_msg(bot_token, chat_id, msg, task['url'])
+			bot.send_message(msg, task['url'])
 
 def get_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
@@ -44,9 +33,9 @@ def get_tasks(retry=False):
 			}
 	try:
 		r = requests.get(url, headers=headers)
-		if retry: bot_send_msg(bot_token, chat_id, 'Parser is up again')
+		if retry: bot.send_message('Parser is up again')
 	except ConnectionError:
-		bot_send_msg(bot_token, chat_id, 'Parser is down. Going to try to reconnect in 1 minute.')
+		bot.send_message('Parser is down. Going to try to reconnect in 1 minute.')
 		time.sleep(60)
 		get_tasks(retry=True)
 	tasks = json.loads(r.text)['tasks']
@@ -60,8 +49,7 @@ def get_tasks(retry=False):
 	return tasks_to_send
 
 if __name__ == '__main__':
-	bot_token = os.environ['BOT_TOKEN']
-	chat_id = os.environ['CHAT_ID']
+	bot = Bot_Notifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 	processed_tasks = []
 	keywords = ['python', 'питон', 'пайтон', 'парс', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
 
