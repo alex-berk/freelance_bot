@@ -20,10 +20,8 @@ def tasks_sender(task_list):
 	for task in task_list[::-1]:
 		if task['id'] not in processed_tasks:
 			print(task['title'], task['price'])
-		if task['id'] not in processed_tasks and keyword_search(keywords, task['title']) or keyword_search(keywords, task['tags']):
-			tags = ', '.join(task['tags'])
-			msg = f"<b>{task['title']}</b>\n{task['price']}\n<code>{tags}</code>"
-			bot.send_message(msg, task['url'])
+			if keyword_search(keywords, task['tags']) or keyword_search(keywords, task['title']):
+				bot.send_job(task)
 
 def get_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
@@ -43,7 +41,7 @@ def get_tasks(retry=False):
 	for task in tasks:
 		if task['id'] not in processed_tasks:
 			tasks_to_send.append({'title': task['title'], 'id': task['id'],
-								'price': '{} / {}'.format(task['price']['value'], task['price']['type']),
+								'price': task['price']['value'], 'price_format': task['price']['type'],
 								'tags': [tag['name'] for tag in task['tags']],
 								'url': 'https://freelansim.ru' + task['href']})
 	return tasks_to_send

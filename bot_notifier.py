@@ -17,3 +17,9 @@ class Bot_Notifier():
 		if not success:
 			print('Message not been sent!, Got response:', r.text, message, url, sep='\n')
 		return success
+
+	def send_job(self, job):
+		tags = ', '.join(job['tags'])
+		price = job['price']
+		text = f"<b>{job['title']}</b>\n{job['price']}\n<code>{tags}</code>"
+		self.send_message(text, job['url'])
