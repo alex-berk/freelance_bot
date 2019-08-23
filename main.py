@@ -22,7 +22,7 @@ def tasks_sender(task_list):
 			print(task['title'], task['price'])
 		if task['id'] not in processed_tasks and keyword_search(keywords, task['title']) or keyword_search(keywords, task['tags']):
 			tags = ', '.join(task['tags'])
-			msg = f"<b>{task['title']}</b>\n{task['price']}\n<i>{tags}</i>"
+			msg = f"<b>{task['title']}</b>\n{task['price']}\n<code>{tags}</code>"
 			bot.send_message(msg, task['url'])
 
 def get_tasks(retry=False):

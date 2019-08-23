@@ -15,5 +15,5 @@ class Bot_Notifier():
 		r = requests.post(f'https://api.telegram.org/bot{self.token}/sendMessage', params=params)
 		success = json.loads(r.text)['ok']
 		if not success:
-			print('Message not been sent!, Got response:', r.text, text, url, sep='\n')
+			print('Message not been sent!, Got response:', r.text, message, url, sep='\n')
 		return success
