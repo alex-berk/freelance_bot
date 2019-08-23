@@ -19,7 +19,7 @@ def keyword_search(keywords, body):
 def tasks_sender(task_list):
 	for task in task_list[::-1]:
 		if task['id'] not in processed_tasks:
-			print(task['title'], task['price'])
+			print(task['title'], task['price'], task['price_format'])
 			if keyword_search(keywords, task['tags']) or keyword_search(keywords, task['title']):
 				bot.send_job(task)
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 	processed_tasks = [task['id'] for task in get_tasks()]
 	while True:
 		tasks = get_tasks()
-		print('\n[{}] Sent request'.format(datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')))
+		print("\n[{datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')}] Sent request")
 		new_tasks = [task for task in tasks if task not in processed_tasks]
 		tasks_sender(new_tasks)
 		processed_tasks.extend([task['id'] for task in new_tasks])

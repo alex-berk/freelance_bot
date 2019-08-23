@@ -20,6 +20,6 @@ class Bot_Notifier():
 
 	def send_job(self, job):
 		tags = ', '.join(job['tags'])
-		price = job['price']
-		text = f"<b>{job['title']}</b>\n{job['price']}\n<code>{tags}</code>"
+		price = job['price'] + ' <i>за час</i>' if job['price_format'] == 'per_hour' else job['price']
+		text = f"<b>{job['title']}</b>\n{price}\n<code>{tags}</code>"
 		self.send_message(text, job['url'])
