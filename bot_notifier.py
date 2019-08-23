@@ -2,7 +2,7 @@
 import requests, json
 import os
 
-class Bot_Notifier():
+class BotNotifier():
 	def __init__(self, token, admin_chat_id):
 		self.token = token
 		self.admin_chat_id = admin_chat_id
