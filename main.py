@@ -54,7 +54,7 @@ if __name__ == '__main__':
 	processed_tasks = [task['id'] for task in get_tasks()]
 	while True:
 		tasks = get_tasks()
-		print("\n[{datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')}] Sent request")
+		print(f"\n[{datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')}] Sent request")
 		new_tasks = [task for task in tasks if task not in processed_tasks]
 		tasks_sender(new_tasks)
 		processed_tasks.extend([task['id'] for task in new_tasks])
