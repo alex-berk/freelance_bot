@@ -1,8 +1,26 @@
-import os
+import os, logging
 import time, datetime
 import requests
 import json
 from bot_notifier import BotNotifier
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H:%M:%S')
+
+try: file_handler = logging.FileHandler(os.path.join('logs', str(datetime.date.today()) + '.log'))
+except FileNotFoundError:
+	os.mkdir('logs')
+	file_handler = logging.FileHandler(os.path.join('logs', str(datetime.date.today()) + '.log'))
+file_handler.setFormatter(formatter)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', '%H:%M:%S'))
+
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
 
 
 def keyword_search(keywords, body):
@@ -17,10 +35,11 @@ def keyword_search(keywords, body):
 			return match
 	return match
 
-def tasks_sender(task_list):
+def tasks_sender(task_list): 
 	for task in task_list[::-1]:
-		print(task['title'], task['price'], task['price_format'])
+		print(f"{task['title']}, {task['price']}, {task['price_format']}\n")
 		if keyword_search(keywords, task['tags']) or keyword_search(keywords, task['title']):
+			logger.debug(f"Found task {task['id']}")
 			bot.send_job(task)
 		processed_tasks.append(task['id'])
 
@@ -33,6 +52,7 @@ def get_tasks(retry=False):
 		r = requests.get(url, headers=headers)
 		if retry: bot.send_message('Parser is up again')
 	except ConnectionError:
+		logger.warning('Parser is down')
 		bot.send_message('Parser is down. Going to try to reconnect in 1 minute.')
 		time.sleep(60)
 		get_tasks(retry=True)
@@ -46,13 +66,16 @@ def get_tasks(retry=False):
 	return parsed_tasks
 
 if __name__ == '__main__':
+	logger.debug('Started')
 	bot = BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 	keywords = ['python', 'питон', 'пайтон', 'парс', 'парсер', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
 
 	processed_tasks = [task['id'] for task in get_tasks()]
+	logger.debug(f"New tasks {processed_tasks}")
 	time.sleep(60)
 	while True:
-		print(f"\n[{datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')}] Sent request")
 		new_tasks = [task for task in get_tasks() if task['id'] not in processed_tasks]
+		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
+		logger.info("Sent request for the new tasks")
 		tasks_sender(new_tasks)
 		time.sleep(60 * 5)

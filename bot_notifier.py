@@ -1,5 +1,8 @@
 import requests, json
-import os
+import os, logging
+import datetime
+
+logger = logging.getLogger('__main__')
 
 
 class BotNotifier():
@@ -18,8 +21,10 @@ class BotNotifier():
 			params['reply_markup'] = json.dumps({'inline_keyboard': [[{'text': anchor, 'url': url}]]})
 		r = requests.post(f'https://api.telegram.org/bot{self.token}/sendMessage', params=params)
 		success = json.loads(r.text)['ok']
-		if not success:
-			print('Message not been sent!, Got response:', r.text, message, link, sep='\n')
+		if success:
+			logger.debug(f"Sent message to {chat_id}")
+		else:
+			logger.error(f"Message not been sent!, Got response: {r.text}; {chat_id}; {link}; {disable_preview}")
 		return success
 
 	def send_job(self, job):
@@ -27,3 +32,4 @@ class BotNotifier():
 		price = job['price'] + ' <i>за час</i>' if job['price_format'] == 'per_hour' else job['price']
 		text = f"<b>{job['title']}</b>\n{price}\n<code>{tags}</code>"
 		self.send_message(text, link=job['url'])
+		logger.debug(f"Sent job {job['id']}")
