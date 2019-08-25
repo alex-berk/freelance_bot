@@ -3,6 +3,7 @@ import time, datetime
 import requests
 import json
 from bot_notifier import BotNotifier
+import dummy_data
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -35,13 +36,13 @@ def keyword_search(keywords, body):
 			return match
 	return match
 
-def tasks_sender(task_list): 
-	for task in task_list[::-1]:
-		print(f"{task['title']}, {task['price']}, {task['price_format']}\n")
-		if keyword_search(keywords, task['tags']) or keyword_search(keywords, task['title']):
-			logger.debug(f"Found task {task['id']}")
-			bot.send_job(task)
-		processed_tasks.append(task['id'])
+def tasks_sender(task_list):
+	for user in dummy_data.users:
+		for task in task_list[::-1]:
+			if keyword_search(user.keywords, task['tags']) or keyword_search(user.keywords, task['title']):
+				logger.debug(f"Found task {task['id']} for the user {user.chat_id}")
+				bot.send_job(task, user.chat_id)
+			processed_tasks.append(task['id'])
 
 def get_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
@@ -68,13 +69,14 @@ def get_tasks(retry=False):
 if __name__ == '__main__':
 	logger.debug('Started')
 	bot = BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
-	keywords = ['python', 'питон', 'пайтон', 'парс', 'парсер', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
 
 	processed_tasks = [task['id'] for task in get_tasks()]
 	logger.debug(f"New tasks {processed_tasks}")
 	time.sleep(60)
 	while True:
 		new_tasks = [task for task in get_tasks() if task['id'] not in processed_tasks]
+		for task in new_tasks:
+			print(f"{task['title']}, {task['price']}, {task['price_format']}\n")
 		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
 		logger.info("Sent request for the new tasks")
 		tasks_sender(new_tasks)
