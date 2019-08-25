@@ -1,6 +1,7 @@
-import requests, json
 import os, logging
 import datetime
+import requests, json
+import telebot
 
 logger = logging.getLogger('__main__')
 
@@ -9,6 +10,13 @@ class BotNotifier():
 	def __init__(self, token, admin_chat_id):
 		self.token = token
 		self.admin_chat_id = admin_chat_id
+
+		self.listener = telebot.TeleBot(self.token)
+
+		@self.listener.message_handler(commands=['start'])
+		def handle_start(message):
+			logger.info(f'Got message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.type if not message.chat.title else message.chat.title}, with text "{message.text}"')
+			self.send_message('Started!', message.chat.id)
 
 	def send_message(self, message, chat_id=None, link=None, disable_preview=False):
 		if not chat_id: chat_id = self.admin_chat_id
@@ -33,3 +41,5 @@ class BotNotifier():
 		text = f"<b>{job['title']}</b>\n{price}\n<code>{tags}</code>"
 		self.send_message(text, link=job['url'])
 		logger.debug(f"Sent job {job['id']}")
+
+

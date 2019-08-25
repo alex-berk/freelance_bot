@@ -2,9 +2,10 @@ import os, logging
 import time, datetime
 import requests
 import json
-from bot_notifier import BotNotifier
+import tgbot
+from multiprocessing import Process
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H:%M:%S')
@@ -64,11 +65,8 @@ def get_tasks(retry=False):
 							'url': 'https://freelansim.ru' + task['href']})
 	return parsed_tasks
 
-if __name__ == '__main__':
-	logger.debug('Started')
-	bot = BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
-	keywords = ['python', 'питон', 'пайтон', 'парс', 'парсер', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
 
+def main():
 	processed_tasks = [task['id'] for task in get_tasks()]
 	logger.debug(f"New tasks {processed_tasks}")
 	time.sleep(60)
@@ -85,3 +83,23 @@ if __name__ == '__main__':
 		logger.info("Sent request for the new tasks")
 		tasks_sender(new_tasks)
 		time.sleep(60 * 5)
+
+def subprocess():
+	try:
+		bot.listener.polling()
+	except Exception as e:
+		logger.error(e)
+		subprocess()
+
+bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
+keywords = ['python', 'питон', 'пайтон', 'парс', 'парсер', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
+
+if __name__ == '__main__':
+	logger.debug('Started')
+
+	process_1 = Process(target=main)
+	process_2 = Process(target=subprocess)
+	process_1.start()
+	process_2.start()
+	process_1.join()
+	process_2.join()
