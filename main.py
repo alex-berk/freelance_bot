@@ -3,7 +3,7 @@ import time, datetime
 import requests
 import json
 from bot_notifier import BotNotifier
-import dummy_data
+import db_handler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -23,6 +23,16 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 
+def string_cleaner(dirty_srtring):
+	word_list, curr_word = [], ''
+	for s in dirty_srtring:
+		if s.isalpha():
+			curr_word += s.lower()
+		else:
+			if curr_word: word_list.append(curr_word)
+			curr_word = ''
+	return word_list
+
 def keyword_search(keywords, body):
 	try:
 		body = body.lower().split()
@@ -36,8 +46,8 @@ def keyword_search(keywords, body):
 	return match
 
 def tasks_sender(task_list):
-	for user in dummy_data.users:
-		for task in task_list[::-1]:
+	for task in task_list[::-1]:
+		for user in db_handler.get_users():
 			if keyword_search(user.keywords, task['tags']) or keyword_search(user.keywords, task['title']):
 				logger.debug(f"Found task {task['id']} for the user {user.chat_id}")
 				bot.send_job(task, user.chat_id)
