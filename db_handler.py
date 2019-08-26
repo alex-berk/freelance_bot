@@ -46,9 +46,9 @@ def get_users():
 def add_task(task):
 	conn = sqlite3.connect('data.db')
 	with conn:
-		task['tags'] = ';'.join(task['tags'])
+		task['inline_tags'] = ';'.join(task['tags'])
 		try:
-			conn.cursor().execute("INSERT INTO tasks VALUES (:id, :title, :tags, :price, :price_format)", task)
+			conn.cursor().execute("INSERT INTO tasks VALUES (:id, :title, :inline_tags, :price, :price_format)", task)
 			conn.commit()
 		except sqlite3.IntegrityError as e:
 			logger.error(e)
