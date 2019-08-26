@@ -36,7 +36,7 @@ class BotNotifier():
 			elif message.text == '/start' or message.text == '/start@' + self.listener.get_me().username:
 				user_skeys = db_handler.get_user_skeys(message.chat.id)
 				if user_skeys:
-					self.send_message('У вас уже настроены ключи для поиска:\n<code>' + ', '.join(user_skeys) + '</code>\nЗаново их задать можно коммандой /settings', message.chat.id)
+					self.send_message('У вас уже настроены ключи для поиска:\n' + ', '.join(user_skeys) + '\n\nЗаново их задать можно коммандой /settings', message.chat.id)
 				else:
 					self.setup_keys(message.chat.id)
 			elif message.text == '/settings' or message.text == '/settings@' + self.listener.get_me().username:
@@ -58,8 +58,9 @@ class BotNotifier():
 					db_handler.add_user(message.chat.id, s_keys)
 				except db_handler.sqlite3.IntegrityError:
 					db_handler.update_user_keys(message.chat.id, s_keys)
-				confirm_text = 'Все готово. Ваши ключи для поиска:\n<code>' + ", ".join(s_keys) + '</code>'
+				confirm_text = 'Все готово. Ваши ключи для поиска:\n' + ", ".join(s_keys) + '\n\nНачинаю отслеживать задачи'
 				self.send_message(confirm_text, message.chat.id)
+				self.send_sticker('CAADAgADBwIAArD72weq7luNKMN99BYE', message.chat.id)
 				self.setup_step = None
 			elif self.setup_step == 'stop_tacking':
 				if message.text.lower() == 'да':
@@ -82,6 +83,14 @@ class BotNotifier():
 		else:
 			logger.error(f"Message not been sent!, Got response: {r.text}; {chat_id}; {link}; {disable_preview}")
 		return success
+
+	def send_sticker(self, sticker_id, chat_id=None):
+		try:
+			if not chat_id: chat_id = self.admin_chat_id
+			params = {'chat_id': chat_id, 'sticker': sticker_id}
+			r = requests.post(f'https://api.telegram.org/bot{self.token}/sendSticker', params=params)
+		except Exception as e:
+			logger.debug(e)
 
 	def send_job(self, job, chat_id=None):
 		tags = ', '.join(job['tags'])
