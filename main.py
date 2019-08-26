@@ -67,7 +67,7 @@ def get_tasks(retry=False):
 
 
 def main():
-	processed_tasks = [task['id'] for task in get_tasks()]
+	
 	logger.debug(f"New tasks {processed_tasks}")
 	time.sleep(60)
 	while True:
@@ -93,7 +93,7 @@ def subprocess():
 
 bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 keywords = ['python', 'питон', 'пайтон', 'парс', 'парсер', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
-processed_tasks = []
+processed_tasks = [task['id'] for task in get_tasks()]
 
 if __name__ == '__main__':
 	logger.debug('Started')

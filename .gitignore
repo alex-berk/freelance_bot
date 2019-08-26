@@ -2,3 +2,6 @@
 __pycache__
 todo.txt
 logs
+*.db
+*.db-journal
+*.sqbpro
