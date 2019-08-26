@@ -24,16 +24,6 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 
-def string_cleaner(dirty_srtring):
-	word_list, curr_word = [], ''
-	for s in dirty_srtring:
-		if s.isalpha():
-			curr_word += s.lower()
-		else:
-			if curr_word: word_list.append(curr_word)
-			curr_word = ''
-	return word_list
-
 def keyword_search(keywords, body):
 	try:
 		body = body.lower().split()
@@ -98,11 +88,7 @@ def main():
 		time.sleep(60 * 5)
 
 def subprocess():
-	try:
-		bot.listener.polling()
-	except Exception as e:
-		logger.error(e)
-		subprocess()
+	bot.listener.polling()
 
 bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 

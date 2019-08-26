@@ -31,10 +31,16 @@ except sqlite3.OperationalError:
 	pass
 
 
-def add_user(id, tags):
+def add_user(id, keys):
 	conn = sqlite3.connect('data.db')
 	with conn:
-		conn.cursor().execute('INSERT INTO users VALUES (?, ?)', (id, ';'.join(tags)))
+		conn.cursor().execute('INSERT INTO users VALUES (?, ?)', (id, ';'.join(keys)))
+		conn.commit()
+
+def update_user_keys(id, keys):
+	conn = sqlite3.connect('data.db')
+	with conn:
+		conn.cursor().execute('UPDATE users SET search_keys=? WHERE id=?', (';'.join(keys), id))
 		conn.commit()
 
 def get_users():
@@ -42,6 +48,22 @@ def get_users():
 	cursor = conn.cursor()
 	cursor.execute("SELECT * FROM users")
 	return [(User(row[0], row[1].split(";"))) for row in cursor.fetchall()]
+
+def get_user_skeys(user_id):
+	conn = sqlite3.connect('data.db')
+	cursor = conn.cursor()
+	cursor.execute("SELECT search_keys FROM users WHERE id=?", (user_id,))
+	try:
+		return cursor.fetchone()[0].split(';')
+	except TypeError:
+		return None
+
+def delete_user(user_id):
+	conn = sqlite3.connect('data.db')
+	with conn:
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM users WHERE id=?", (user_id,))
+		conn.commit()
 
 def add_task(task):
 	conn = sqlite3.connect('data.db')
