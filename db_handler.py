@@ -1,5 +1,8 @@
 import sqlite3
+import logging
 from collections import namedtuple
+
+logger = logging.getLogger('__main__')
 
 User = namedtuple('User', ['chat_id', 'keywords'])
 
@@ -43,8 +46,13 @@ def get_users():
 def add_task(task):
 	conn = sqlite3.connect('data.db')
 	with conn:
-		conn.cursor().execute("INSERT INTO tasks VALUES (?, ?, ?, ?, ?)", (task["id"], task["title"], ';'.join(task["tags"]), task["price"], task["price_format"]))
-		conn.commit()
+		task['tags'] = ';'.join(task['tags'])
+		try:
+			conn.cursor().execute("INSERT INTO tasks VALUES (:id, :title, :tags, :price, :price_format)", task)
+			conn.commit()
+		except sqlite3.IntegrityError as e:
+			logger.error(e)
+			raise e
 
 def get_task(search_id):
 	conn = sqlite3.connect('data.db')
@@ -54,8 +62,14 @@ def get_task(search_id):
 	task['id'], task['title'], task['tags'], task['price'], task['price_format'] = cursor.fetchone()
 	return task
 
-def get_tasks_ids(q=30):
+def get_tasks_ids(q=10):
 	conn = sqlite3.connect('data.db')
 	cursor = conn.cursor()
 	cursor.execute('SELECT id FROM tasks ORDER BY id DESC')
 	return [i[0] for i in cursor.fetchmany(q)]
+
+def check_task_id(task_id):
+	conn = sqlite3.connect('data.db')
+	cursor = conn.cursor()
+	cursor.execute('SELECT id FROM tasks WHERE id=?', (task_id,))
+	return bool(cursor.fetchone())

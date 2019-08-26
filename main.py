@@ -58,6 +58,7 @@ def parse_tasks(retry=False):
 	headers = {	'User-Agent':'Telegram Freelance bot',
 				'Accept': 'application/json',
 				'X-App-Version': '1'}
+	logger.info("Sending request")
 	try:
 		r = requests.get(url, headers=headers)
 		if retry: bot.send_message('Parser is up again')
@@ -85,14 +86,14 @@ def main():
 			file_handler.setFormatter(formatter)
 			logger.addHandler(file_handler)
 
-		logger.debug(f"Old tasks {db_handler.get_tasks_ids()}")
-		new_tasks = [task for task in parse_tasks() if task['id'] not in db_handler.get_tasks_ids()]
+		old_tasks = db_handler.get_tasks_ids()
+		logger.debug(f"Old tasks {old_tasks}")
+		new_tasks = [task for task in parse_tasks() if task['id'] not in old_tasks and not db_handler.check_task_id(task['id'])]
 		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
 		for task in new_tasks:
-			print(f"{task['title']}, {task['price']}, {task['price_format']}\n")
+			print(f"{task['title']}, {task['price']}, {task['price_format']}")
 			logger.debug(f"Sending task {task['id']} to db")
 			db_handler.add_task(task)
-		logger.info("Sending request for new tasks")
 		tasks_sender(new_tasks)
 		time.sleep(60 * 5)
 
