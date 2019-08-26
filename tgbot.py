@@ -35,11 +35,11 @@ class BotNotifier():
 			logger.error(f"Message not been sent!, Got response: {r.text}; {chat_id}; {link}; {disable_preview}")
 		return success
 
-	def send_job(self, job):
+	def send_job(self, job, chat_id=None):
 		tags = ', '.join(job['tags'])
 		price = job['price'] + ' <i>за час</i>' if job['price_format'] == 'per_hour' else job['price']
 		text = f"<b>{job['title']}</b>\n{price}\n<code>{tags}</code>"
-		self.send_message(text, link=job['url'])
+		self.send_message(text, link=job['url'], chat_id=chat_id)
 		logger.debug(f"Sent job {job['id']}")
 
 

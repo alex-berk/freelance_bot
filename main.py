@@ -1,9 +1,10 @@
 import os, logging
+from multiprocessing import Process
 import time, datetime
 import requests
 import json
 import tgbot
-from multiprocessing import Process
+import db_handler
 
 logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
@@ -23,6 +24,16 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 
+def string_cleaner(dirty_srtring):
+	word_list, curr_word = [], ''
+	for s in dirty_srtring:
+		if s.isalpha():
+			curr_word += s.lower()
+		else:
+			if curr_word: word_list.append(curr_word)
+			curr_word = ''
+	return word_list
+
 def keyword_search(keywords, body):
 	try:
 		body = body.lower().split()
@@ -35,15 +46,14 @@ def keyword_search(keywords, body):
 			return match
 	return match
 
-def tasks_sender(task_list): 
+def tasks_sender(task_list):
 	for task in task_list[::-1]:
-		print(f"{task['title']}, {task['price']}, {task['price_format']}")
-		if keyword_search(keywords, task['tags']) or keyword_search(keywords, task['title']):
-			logger.debug(f"Found task {task['id']}")
-			bot.send_job(task)
-		processed_tasks.append(task['id'])
+		for user in db_handler.get_users():
+			if keyword_search(user.keywords, task['tags']) or keyword_search(user.keywords, task['title']):
+				logger.debug(f"Found task {task['id']} for the user {user.chat_id}")
+				bot.send_job(task, user.chat_id)
 
-def get_tasks(retry=False):
+def parse_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
 	headers = {	'User-Agent':'Telegram Freelance bot',
 				'Accept': 'application/json',
@@ -55,7 +65,7 @@ def get_tasks(retry=False):
 		logger.warning('Parser is down')
 		bot.send_message('Parser is down. Going to try to reconnect in 1 minute.')
 		time.sleep(60)
-		get_tasks(retry=True)
+		parse_tasks(retry=True)
 	tasks = json.loads(r.text)['tasks']
 	parsed_tasks = []
 	for task in tasks:
@@ -67,9 +77,6 @@ def get_tasks(retry=False):
 
 
 def main():
-	
-	logger.debug(f"New tasks {processed_tasks}")
-	time.sleep(60)
 	while True:
 
 		if a_date != datetime.date.today():
@@ -78,9 +85,14 @@ def main():
 			file_handler.setFormatter(formatter)
 			logger.addHandler(file_handler)
 
-		new_tasks = [task for task in get_tasks() if task['id'] not in processed_tasks]
+		logger.debug(f"Old tasks {db_handler.get_tasks_ids()}")
+		new_tasks = [task for task in parse_tasks() if task['id'] not in db_handler.get_tasks_ids()]
 		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
-		logger.info("Sent request for the new tasks")
+		for task in new_tasks:
+			print(f"{task['title']}, {task['price']}, {task['price_format']}\n")
+			logger.debug(f"Sending task {task['id']} to db")
+			db_handler.add_task(task)
+		logger.info("Sending request for new tasks")
 		tasks_sender(new_tasks)
 		time.sleep(60 * 5)
 
@@ -92,8 +104,6 @@ def subprocess():
 		subprocess()
 
 bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
-keywords = ['python', 'питон', 'пайтон', 'парс', 'парсер', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть', 'analytics', 'аналитикс', 'метрика', 'metrica', 'metrika', 'gtm', 'bi', 'query']
-processed_tasks = [task['id'] for task in get_tasks()]
 
 if __name__ == '__main__':
 	logger.debug('Started')
