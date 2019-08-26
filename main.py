@@ -51,9 +51,8 @@ def tasks_sender(task_list):
 			if keyword_search(user.keywords, task['tags']) or keyword_search(user.keywords, task['title']):
 				logger.debug(f"Found task {task['id']} for the user {user.chat_id}")
 				bot.send_job(task, user.chat_id)
-			processed_tasks.append(task['id'])
 
-def get_tasks(retry=False):
+def parse_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
 	headers = {	'User-Agent':'Telegram Freelance bot',
 				'Accept': 'application/json',
@@ -65,7 +64,7 @@ def get_tasks(retry=False):
 		logger.warning('Parser is down')
 		bot.send_message('Parser is down. Going to try to reconnect in 1 minute.')
 		time.sleep(60)
-		get_tasks(retry=True)
+		parse_tasks(retry=True)
 	tasks = json.loads(r.text)['tasks']
 	parsed_tasks = []
 	for task in tasks:
@@ -79,9 +78,6 @@ if __name__ == '__main__':
 	logger.debug('Started')
 	bot = BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 
-	processed_tasks = [task['id'] for task in get_tasks()]
-	logger.debug(f"New tasks {processed_tasks}")
-	time.sleep(60)
 	while True:
 
 		if a_date != datetime.date.today():
@@ -90,10 +86,13 @@ if __name__ == '__main__':
 			file_handler.setFormatter(formatter)
 			logger.addHandler(file_handler)
 
-		new_tasks = [task for task in get_tasks() if task['id'] not in processed_tasks]
+		logger.debug(f"Old tasks {db_handler.get_tasks_ids()}")
+		new_tasks = [task for task in parse_tasks() if task['id'] not in db_handler.get_tasks_ids()]
+		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
 		for task in new_tasks:
 			print(f"{task['title']}, {task['price']}, {task['price_format']}\n")
-		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
-		logger.info("Sent request for the new tasks")
+			logger.debug(f"Sending task {task['id']} to db")
+			db_handler.add_task(task)
+		logger.info("Sending request for new tasks")
 		tasks_sender(new_tasks)
 		time.sleep(60 * 5)
