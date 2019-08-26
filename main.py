@@ -45,7 +45,7 @@ def tasks_sender(task_list):
 
 def parse_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
-	headers = {	'User-Agent':'Telegram Freelance bot',
+	headers = {	'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)',
 				'Accept': 'application/json',
 				'X-App-Version': '1'}
 	logger.info("Sending request")
@@ -66,19 +66,19 @@ def parse_tasks(retry=False):
 							'url': 'https://freelansim.ru' + task['href']})
 	return parsed_tasks
 
+def check_date_on_logger():
+	if a_date != datetime.date.today():
+		file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
+		logger.removeHandler(file_handler)
+		file_handler = logging.FileHandler(os.path.join('logs', str(datetime.date.today()) + '.log'))
+		file_handler.setFormatter(formatter)
+		logger.addHandler(file_handler)
+
 
 def main():
 	while True:
-
-		if a_date != datetime.date.today():
-			logger.removeHandler(file_handler)
-			file_handler = logging.FileHandler(os.path.join('logs', str(datetime.date.today()) + '.log'))
-			file_handler.setFormatter(formatter)
-			logger.addHandler(file_handler)
-
-		old_tasks = db_handler.get_tasks_ids()
-		logger.debug(f"Old tasks {old_tasks}")
-		new_tasks = [task for task in parse_tasks() if task['id'] not in old_tasks and not db_handler.check_task_id(task['id'])]
+		check_date_on_logger()
+		new_tasks = [task for task in parse_tasks() if task['id'] not in db_handler.get_tasks_ids() and not db_handler.check_task_id(task['id'])]
 		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
 		for task in new_tasks:
 			print(f"{task['title']}, {task['price']}, {task['price_format']}")
