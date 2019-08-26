@@ -29,22 +29,22 @@ class BotNotifier():
 		@self.listener.message_handler(commands=['status', 'start', 'settings', 'cancel', 'stop'])
 		def handle_commands(message):
 			logger.info(f'Got message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.type if not message.chat.title else message.chat.title}, with text "{message.text}"')
-			if message.text == '/status' or '/status@' + self.listener.get_me().username:
+			if message.text == '/status' or message.text == '/status@' + self.listener.get_me().username:
 				status_text = 'Up and running!'
 				if self.setup_step: status_text += '\nCurrent setup step: ' + self.setup_step
 				self.send_message(status_text, message.chat.id)
-			elif message.text == '/start' or '/start@' + self.listener.get_me().username:
+			elif message.text == '/start' or message.text == '/start@' + self.listener.get_me().username:
 				user_skeys = db_handler.get_user_skeys(message.chat.id)
 				if user_skeys:
 					self.send_message('У вас уже настроены ключи для поиска:\n<code>' + ', '.join(user_skeys) + '</code>\nЗаново их задать можно коммандой /settings', message.chat.id)
 				else:
 					self.setup_keys(message.chat.id)
-			elif message.text == '/settings' or '/settings@' + self.listener.get_me().username:
+			elif message.text == '/settings' or message.text == '/settings@' + self.listener.get_me().username:
 				self.setup_keys(message.chat.id)
-			elif message.text == '/cancel' or '/cancel@' + self.listener.get_me().username:
+			elif message.text == '/cancel' or message.text == '/cancel@' + self.listener.get_me().username:
 				self.setup_step = None
 				self.send_message('Операция отменена', message.chat.id)
-			elif message.text == '/stop' or '/stop@' + self.listener.get_me().username:
+			elif message.text == '/stop' or message.text == '/stop@' + self.listener.get_me().username:
 				self.setup_step = 'stop_tacking'
 				self.send_message('Вы точно хотите остановить отслеживание?\n(Напишитие "Да" чтобы подтвердить)', message.chat.id)
 			else:
