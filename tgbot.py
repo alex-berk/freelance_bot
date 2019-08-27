@@ -7,6 +7,21 @@ import db_handler
 logger = logging.getLogger('__main__')
 
 
+def tag_strip(string):
+	word_list = [i.lower() for i in string.split(',')]
+	cleaned_list = []
+	for word in word_list:
+		cleaned_word = ''
+		for symb in word:
+			if symb.isalpha() or symb.isdigit() or symb == ' ':
+				cleaned_word += symb
+			else:
+				cleaned_word += ' '
+		cleaned_word = cleaned_word.strip()
+		if cleaned_word: cleaned_list.append(cleaned_word)
+	return cleaned_list
+
+
 class BotNotifier():
 	def __init__(self, token, admin_chat_id):
 		self.token = token
@@ -23,12 +38,14 @@ class BotNotifier():
 				if self.setup_step: status_text += '\nCurrent setup step: ' + self.setup_step
 				self.send_message(status_text, message.chat.id)
 			elif message.text == '/start' or message.text == '/start@' + self.listener.get_me().username:
+				self.setup_step = None
 				user_skeys = db_handler.get_user_skeys(message.chat.id)
 				if user_skeys:
-					self.send_message('У вас уже настроены ключи для поиска:\n' + ', '.join(user_skeys) + '\n\nЗаново их задать можно коммандой /settings', message.chat.id)
+					self.send_message('У вас уже настроены ключевые слова для поиска:\n' + ', '.join(user_skeys) + '\n\nЗаново их задать можно коммандой /settings', message.chat.id)
 				else:
 					self.setup_keys(message.chat.id)
 			elif message.text == '/settings' or message.text == '/settings@' + self.listener.get_me().username:
+				self.setup_step = None
 				self.setup_keys(message.chat.id)
 			elif message.text == '/cancel' or message.text == '/cancel@' + self.listener.get_me().username:
 				self.setup_step = None
@@ -42,18 +59,12 @@ class BotNotifier():
 		@self.listener.message_handler(content_types=['text'])
 		def handle_text(message):
 			if self.setup_step == 'setup_keys':
-				try:
-					s_keys = string_cleaner(message.text)
-				except NameError as e:
-					logger.error(e)
-					from main import string_cleaner
-					s_keys = string_cleaner(message.text)
-				
+				s_keys = tag_strip(message.text)
 				try:
 					db_handler.add_user(message.chat.id, s_keys)
 				except db_handler.sqlite3.IntegrityError:
 					db_handler.update_user_keys(message.chat.id, s_keys)
-				confirm_text = 'Все готово. Ваши ключи для поиска:\n' + ", ".join(s_keys) + '\n\nНачинаю отслеживать задачи'
+				confirm_text = 'Все готово. Ваши ключевые слова для поиска:\n<b>' + ", ".join(s_keys) + '</b>\n\nНачинаю отслеживать задачи'
 				self.send_message(confirm_text, message.chat.id)
 				self.send_sticker('CAADAgADBwIAArD72weq7luNKMN99BYE', message.chat.id)
 				self.setup_step = None
@@ -61,6 +72,7 @@ class BotNotifier():
 				if message.text.lower() == 'да':
 					db_handler.delete_user(message.chat.id)
 					self.send_message("Отслеживание остановлено. Снова начать отслеживать задачи можно если набрать комманду /start", message.chat.id)
+					self.setup_step = None
 
 	def send_message(self, message, chat_id=None, link=None, disable_preview=False):
 		logger.debug(f"Sending message to {chat_id}")
@@ -93,5 +105,7 @@ class BotNotifier():
 
 	def setup_keys(self, chat_id):
 		self.setup_step = 'setup_keys'
-		setup_text = 'Сейчас можно будет задать слова для поиска.\nКаждый раз, когда бот будет находить их в названии, вам придет оповещение\nОтменить настройку можно командой /cancel'
+		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в названии, вам придет оповещение\nКлючи разделяются запятой.\nДопускается использование только букв, символов и пробелов\n<code>Пример:</code>\n<code>react js, js, фронтенд</code>\nОтменить настройку можно командой /cancel'
+		current_keys = db_handler.get_user_skeys(chat_id)
 		self.send_message(setup_text, chat_id)
+		if current_keys: self.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>', chat_id)

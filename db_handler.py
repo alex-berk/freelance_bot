@@ -54,7 +54,7 @@ def get_user_skeys(user_id):
 	cursor = conn.cursor()
 	cursor.execute("SELECT search_keys FROM users WHERE id=?", (user_id,))
 	try:
-		return cursor.fetchone()[0].split(';')
+		return cursor.fetchone()[0].split(';')[1:-1]
 	except TypeError:
 		return []
 
