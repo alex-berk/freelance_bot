@@ -31,24 +31,23 @@ class BotNotifier(TeleBot):
 		@self.message_handler(commands=['status', 'start', 'keywords', 'cancel', 'stop'])
 		def handle_commands(message):
 			logger.info(f'Got message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.type if not message.chat.title else message.chat.title}, with text "{message.text}"')
-			if message.text == '/status' or message.text == '/status@' + self.get_me().username:
+			if self.verify_command(message.text, 'status'):
 				status_text = 'Up and running!'
 				if self.setup_step.get(message.chat.id): status_text += '\nCurrent setup step: ' + self.setup_step[message.chat.id]
 				self.send_message(status_text, message.chat.id)
-			elif message.text == '/start' or message.text == '/start@' + self.get_me().username:
+			elif self.verify_command(message.text, 'start'):
 				self.setup_step[message.chat.id] = None
-				user_skeys = db_handler.get_user_skeys(message.chat.id)
-				if user_skeys:
-					self.send_message('У вас уже настроены ключевые слова для поиска:\n' + ', '.join(user_skeys) + '\n\nЗаново их задать можно коммандой /keywords', message.chat.id)
+				if db_handler.get_user_skeys(message.chat.id):
+					self.send_message('У вас уже настроены ключевые слова для поиска.\nЗаново их задать можно коммандой /keywords', message.chat.id)
 				else:
 					self.setup_keys(message.chat.id)
-			elif message.text == '/keywords' or message.text == '/keywords@' + self.get_me().username:
+			elif self.verify_command(message.text, 'keywords'):
 				self.setup_step[message.chat.id] = None
 				self.setup_keys(message.chat.id)
-			elif message.text == '/cancel' or message.text == '/cancel@' + self.get_me().username:
+			elif self.verify_command(message.text, 'cancel'):
 				self.setup_step[message.chat.id] = None
 				self.send_message('Операция отменена', message.chat.id)
-			elif message.text == '/stop' or message.text == '/stop@' + self.get_me().username:
+			elif self.verify_command(message.text, 'stop'):
 				self.setup_step[message.chat.id] = 'stop_tacking'
 				self.send_message('Вы точно хотите остановить отслеживание?\n(Напишитие "Да" чтобы подтвердить)', message.chat.id)
 			else:
@@ -73,6 +72,9 @@ class BotNotifier(TeleBot):
 					self.setup_step[message.chat.id] = None
 			else:
 				logger.debug(f"Got random message {message}")
+
+	def verify_command(self, text, command):
+		return text == '/' + command or text == ''.join(['/', command, '@', self.get_me().username])
 
 	def send_message(self, message, chat_id=None, link=None, disable_preview=False):
 		logger.debug(f"Sending message to {chat_id}")
