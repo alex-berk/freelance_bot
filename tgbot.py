@@ -30,7 +30,7 @@ class BotNotifier():
 		self.listener = telebot.TeleBot(self.token)
 		self.setup_step = None
 
-		@self.listener.message_handler(commands=['status', 'start', 'settings', 'cancel', 'stop'])
+		@self.listener.message_handler(commands=['status', 'start', 'keywords', 'cancel', 'stop'])
 		def handle_commands(message):
 			logger.info(f'Got message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.type if not message.chat.title else message.chat.title}, with text "{message.text}"')
 			if message.text == '/status' or message.text == '/status@' + self.listener.get_me().username:
@@ -41,10 +41,10 @@ class BotNotifier():
 				self.setup_step = None
 				user_skeys = db_handler.get_user_skeys(message.chat.id)
 				if user_skeys:
-					self.send_message('У вас уже настроены ключевые слова для поиска:\n' + ', '.join(user_skeys) + '\n\nЗаново их задать можно коммандой /settings', message.chat.id)
+					self.send_message('У вас уже настроены ключевые слова для поиска:\n' + ', '.join(user_skeys) + '\n\nЗаново их задать можно коммандой /keywords', message.chat.id)
 				else:
 					self.setup_keys(message.chat.id)
-			elif message.text == '/settings' or message.text == '/settings@' + self.listener.get_me().username:
+			elif message.text == '/keywords' or message.text == '/keywords@' + self.listener.get_me().username:
 				self.setup_step = None
 				self.setup_keys(message.chat.id)
 			elif message.text == '/cancel' or message.text == '/cancel@' + self.listener.get_me().username:
@@ -101,11 +101,11 @@ class BotNotifier():
 		tags = ', '.join(job['tags'])
 		price = job['price'] + ' <i>за час</i>' if job['price_format'] == 'per_hour' else job['price']
 		text = f"<b>{job['title']}</b>\n{price}\n<code>{tags}</code>"
-		self.send_message(text, link=job['url'], chat_id=chat_id)
+		self.send_message(text, link=job['url'], chat_id=chat_id, disable_preview=True)
 
 	def setup_keys(self, chat_id):
 		self.setup_step = 'setup_keys'
-		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в названии, вам придет оповещение\nКлючи разделяются запятой.\nДопускается использование только букв, символов и пробелов\n<code>Пример:</code>\n<code>react js, js, фронтенд</code>\nОтменить настройку можно командой /cancel'
+		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в названии, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, символов и пробелов\n<code>Пример:</code>\n<code>node js, js, фронтенд</code>\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\nОтменить настройку можно командой /cancel'
 		current_keys = db_handler.get_user_skeys(chat_id)
 		self.send_message(setup_text, chat_id)
 		if current_keys: self.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>', chat_id)
