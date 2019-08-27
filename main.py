@@ -24,24 +24,24 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 
-def keyword_search(keywords, body):
-	try:
-		body = body.lower().split()
-	except AttributeError:
-		body = [item.lower() for item in body]
-		
-	search = (word in body for word in keywords)
-	for match in search:
-		if match:
-			return match
-	return match
+def string_cleaner(dirty_srtring):
+	word_list, curr_word = [], ''
+	for s in dirty_srtring:
+		if s.isalpha():
+			curr_word += s.lower()
+		else:
+			if curr_word: word_list.append(curr_word)
+			curr_word = ''
+	if curr_word: word_list.append(curr_word)
+	return word_list
 
 def tasks_sender(task_list):
 	for task in task_list[::-1]:
-		for user in db_handler.get_users():
-			if keyword_search(user.keywords, task['tags']) or keyword_search(user.keywords, task['title']):
-				logger.debug(f"Found task {task['id'], task['tags']} for the user {user.chat_id}")
-				bot.send_job(task, user.chat_id)
+		search_body = set(string_cleaner(task['title']) + task['tags'])
+		relevant_users = db_handler.get_relevant_users_ids(search_body)
+		logger.debug(f"Found task {task['id'], task['tags']} for the users {relevant_users}")
+		for user_id in relevant_users:
+			bot.send_job(task, user_id)
 
 def parse_tasks(retry=False):
 	url = 'https://freelansim.ru/tasks?per_page=25&page=1'

@@ -7,17 +7,6 @@ import db_handler
 logger = logging.getLogger('__main__')
 
 
-def string_cleaner(dirty_srtring):
-	word_list, curr_word = [], ''
-	for s in dirty_srtring:
-		if s.isalpha():
-			curr_word += s.lower()
-		else:
-			if curr_word: word_list.append(curr_word)
-			curr_word = ''
-	if curr_word: word_list.append(curr_word)
-	return word_list
-
 class BotNotifier():
 	def __init__(self, token, admin_chat_id):
 		self.token = token
@@ -53,7 +42,13 @@ class BotNotifier():
 		@self.listener.message_handler(content_types=['text'])
 		def handle_text(message):
 			if self.setup_step == 'setup_keys':
-				s_keys = string_cleaner(message.text)
+				try:
+					s_keys = string_cleaner(message.text)
+				except NameError as e:
+					logger.error(e)
+					from main import string_cleaner
+					s_keys = string_cleaner(message.text)
+				
 				try:
 					db_handler.add_user(message.chat.id, s_keys)
 				except db_handler.sqlite3.IntegrityError:

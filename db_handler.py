@@ -34,13 +34,13 @@ except sqlite3.OperationalError:
 def add_user(id, keys):
 	conn = sqlite3.connect('data.db')
 	with conn:
-		conn.cursor().execute('INSERT INTO users VALUES (?, ?)', (id, ';'.join(keys)))
+		conn.cursor().execute('INSERT INTO users VALUES (?, ?)', (id, ';'.join([''] + keys + [''])))
 		conn.commit()
 
 def update_user_keys(id, keys):
 	conn = sqlite3.connect('data.db')
 	with conn:
-		conn.cursor().execute('UPDATE users SET search_keys=? WHERE id=?', (';'.join(keys), id))
+		conn.cursor().execute('UPDATE users SET search_keys=? WHERE id=?', (';'.join([''] + keys + ['']), id))
 		conn.commit()
 
 def get_users():
@@ -56,7 +56,18 @@ def get_user_skeys(user_id):
 	try:
 		return cursor.fetchone()[0].split(';')
 	except TypeError:
-		return None
+		return []
+
+def get_relevant_users_ids(search_keys):
+	conn = sqlite3.connect('data.db')
+	with conn:
+		cursor = conn.cursor()
+		criteria = ' OR '.join([f"search_keys LIKE \"%;{key};%\"" for key in search_keys])
+		cursor.execute("SELECT id FROM users WHERE " + criteria)
+		results = cursor.fetchall()
+		if results:
+			return [i[0] for i in results]
+		return []
 
 def delete_user(user_id):
 	conn = sqlite3.connect('data.db')
