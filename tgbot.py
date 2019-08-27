@@ -1,7 +1,7 @@
 import os, logging
 import datetime
 import requests, json
-import telebot
+from telebot import TeleBot
 import db_handler
 
 logger = logging.getLogger('__main__')
@@ -22,41 +22,39 @@ def parse_string(string):
 	return cleaned_list
 
 
-class BotNotifier():
+class BotNotifier(TeleBot):
 	def __init__(self, token, admin_chat_id):
-		self.token = token
+		super().__init__(token)
 		self.admin_chat_id = admin_chat_id
-
-		self.listener = telebot.TeleBot(self.token)
 		self.setup_step = {}
 
-		@self.listener.message_handler(commands=['status', 'start', 'keywords', 'cancel', 'stop'])
+		@self.message_handler(commands=['status', 'start', 'keywords', 'cancel', 'stop'])
 		def handle_commands(message):
 			logger.info(f'Got message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.type if not message.chat.title else message.chat.title}, with text "{message.text}"')
-			if message.text == '/status' or message.text == '/status@' + self.listener.get_me().username:
+			if message.text == '/status' or message.text == '/status@' + self.get_me().username:
 				status_text = 'Up and running!'
 				if self.setup_step.get(message.chat.id): status_text += '\nCurrent setup step: ' + self.setup_step[message.chat.id]
 				self.send_message(status_text, message.chat.id)
-			elif message.text == '/start' or message.text == '/start@' + self.listener.get_me().username:
+			elif message.text == '/start' or message.text == '/start@' + self.get_me().username:
 				self.setup_step[message.chat.id] = None
 				user_skeys = db_handler.get_user_skeys(message.chat.id)
 				if user_skeys:
 					self.send_message('У вас уже настроены ключевые слова для поиска:\n' + ', '.join(user_skeys) + '\n\nЗаново их задать можно коммандой /keywords', message.chat.id)
 				else:
 					self.setup_keys(message.chat.id)
-			elif message.text == '/keywords' or message.text == '/keywords@' + self.listener.get_me().username:
+			elif message.text == '/keywords' or message.text == '/keywords@' + self.get_me().username:
 				self.setup_step[message.chat.id] = None
 				self.setup_keys(message.chat.id)
-			elif message.text == '/cancel' or message.text == '/cancel@' + self.listener.get_me().username:
+			elif message.text == '/cancel' or message.text == '/cancel@' + self.get_me().username:
 				self.setup_step[message.chat.id] = None
 				self.send_message('Операция отменена', message.chat.id)
-			elif message.text == '/stop' or message.text == '/stop@' + self.listener.get_me().username:
+			elif message.text == '/stop' or message.text == '/stop@' + self.get_me().username:
 				self.setup_step[message.chat.id] = 'stop_tacking'
 				self.send_message('Вы точно хотите остановить отслеживание?\n(Напишитие "Да" чтобы подтвердить)', message.chat.id)
 			else:
 				self.send_message('Я не знаю таких команд', message.chat.id)
 
-		@self.listener.message_handler(content_types=['text'])
+		@self.message_handler(content_types=['text'])
 		def handle_text(message):
 			if self.setup_step.get(message.chat.id) == 'setup_keys':
 				s_keys = parse_string(message.text)
@@ -73,6 +71,8 @@ class BotNotifier():
 					db_handler.delete_user(message.chat.id)
 					self.send_message("Отслеживание остановлено. Снова начать отслеживать задачи можно если набрать комманду /start", message.chat.id)
 					self.setup_step[message.chat.id] = None
+			else:
+				logger.debug(f"Got random message {message}")
 
 	def send_message(self, message, chat_id=None, link=None, disable_preview=False):
 		logger.debug(f"Sending message to {chat_id}")
@@ -94,7 +94,7 @@ class BotNotifier():
 			params = {'chat_id': chat_id, 'sticker': sticker_id}
 			r = requests.post(f'https://api.telegram.org/bot{self.token}/sendSticker', params=params)
 		except Exception as e:
-			logger.debug(e)
+			logger.error(e)
 
 	def send_job(self, job, chat_id=None):
 		logger.debug(f"Sending job {job['id']}")

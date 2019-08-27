@@ -88,7 +88,8 @@ def main():
 		time.sleep(60 * 5)
 
 def subprocess():
-	bot.listener.polling()
+	bot.polling()
+
 
 bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 
