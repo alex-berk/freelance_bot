@@ -28,37 +28,37 @@ class BotNotifier():
 		self.admin_chat_id = admin_chat_id
 
 		self.listener = telebot.TeleBot(self.token)
-		self.setup_step = None
+		self.setup_step = {}
 
 		@self.listener.message_handler(commands=['status', 'start', 'keywords', 'cancel', 'stop'])
 		def handle_commands(message):
 			logger.info(f'Got message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.type if not message.chat.title else message.chat.title}, with text "{message.text}"')
 			if message.text == '/status' or message.text == '/status@' + self.listener.get_me().username:
 				status_text = 'Up and running!'
-				if self.setup_step: status_text += '\nCurrent setup step: ' + self.setup_step
+				if self.setup_step.get(message.chat.id): status_text += '\nCurrent setup step: ' + self.setup_step[message.chat.id]
 				self.send_message(status_text, message.chat.id)
 			elif message.text == '/start' or message.text == '/start@' + self.listener.get_me().username:
-				self.setup_step = None
+				self.setup_step[message.chat.id] = None
 				user_skeys = db_handler.get_user_skeys(message.chat.id)
 				if user_skeys:
 					self.send_message('У вас уже настроены ключевые слова для поиска:\n' + ', '.join(user_skeys) + '\n\nЗаново их задать можно коммандой /keywords', message.chat.id)
 				else:
 					self.setup_keys(message.chat.id)
 			elif message.text == '/keywords' or message.text == '/keywords@' + self.listener.get_me().username:
-				self.setup_step = None
+				self.setup_step[message.chat.id] = None
 				self.setup_keys(message.chat.id)
 			elif message.text == '/cancel' or message.text == '/cancel@' + self.listener.get_me().username:
-				self.setup_step = None
+				self.setup_step[message.chat.id] = None
 				self.send_message('Операция отменена', message.chat.id)
 			elif message.text == '/stop' or message.text == '/stop@' + self.listener.get_me().username:
-				self.setup_step = 'stop_tacking'
+				self.setup_step[message.chat.id] = 'stop_tacking'
 				self.send_message('Вы точно хотите остановить отслеживание?\n(Напишитие "Да" чтобы подтвердить)', message.chat.id)
 			else:
 				self.send_message('Я не знаю таких команд', message.chat.id)
 
 		@self.listener.message_handler(content_types=['text'])
 		def handle_text(message):
-			if self.setup_step == 'setup_keys':
+			if self.setup_step.get(message.chat.id) == 'setup_keys':
 				s_keys = tag_strip(message.text)
 				try:
 					db_handler.add_user(message.chat.id, s_keys)
@@ -67,12 +67,12 @@ class BotNotifier():
 				confirm_text = 'Все готово. Ваши ключевые слова для поиска:\n<b>' + ", ".join(s_keys) + '</b>\n\nНачинаю отслеживать задачи'
 				self.send_message(confirm_text, message.chat.id)
 				self.send_sticker('CAADAgADBwIAArD72weq7luNKMN99BYE', message.chat.id)
-				self.setup_step = None
-			elif self.setup_step == 'stop_tacking':
+				self.setup_step[message.chat.id] = None
+			elif self.setup_step.get(message.chat.id) == 'stop_tacking':
 				if message.text.lower() == 'да':
 					db_handler.delete_user(message.chat.id)
 					self.send_message("Отслеживание остановлено. Снова начать отслеживать задачи можно если набрать комманду /start", message.chat.id)
-					self.setup_step = None
+					self.setup_step[message.chat.id] = None
 
 	def send_message(self, message, chat_id=None, link=None, disable_preview=False):
 		logger.debug(f"Sending message to {chat_id}")
@@ -104,7 +104,7 @@ class BotNotifier():
 		self.send_message(text, link=job['url'], chat_id=chat_id, disable_preview=True)
 
 	def setup_keys(self, chat_id):
-		self.setup_step = 'setup_keys'
+		self.setup_step[chat_id] = 'setup_keys'
 		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в названии, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, символов и пробелов\n<code>Пример:</code>\n<code>node js, js, фронтенд</code>\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\nОтменить настройку можно командой /cancel'
 		current_keys = db_handler.get_user_skeys(chat_id)
 		self.send_message(setup_text, chat_id)
