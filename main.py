@@ -67,11 +67,11 @@ def parse_tasks(retry=False):
 	return parsed_tasks
 
 def check_date_on_logger():
+	global file_handler, a_date
 	if a_date != datetime.date.today():
-		file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
+		a_date = datetime.date.today()
 		logger.removeHandler(file_handler)
-		file_handler = logging.FileHandler(os.path.join('logs', str(datetime.date.today()) + '.log'))
-		file_handler.setFormatter(formatter)
+		file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
 		logger.addHandler(file_handler)
 
 
