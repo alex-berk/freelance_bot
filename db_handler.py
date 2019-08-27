@@ -95,7 +95,7 @@ def get_task(search_id):
 	task['id'], task['title'], task['tags'], task['price'], task['price_format'] = cursor.fetchone()
 	return task
 
-def get_tasks_ids(q=10):
+def get_tasks_ids(q=25):
 	conn = sqlite3.connect('data.db')
 	cursor = conn.cursor()
 	cursor.execute('SELECT id FROM tasks ORDER BY id DESC')

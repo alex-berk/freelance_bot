@@ -7,7 +7,7 @@ import db_handler
 logger = logging.getLogger('__main__')
 
 
-def tag_strip(string):
+def parse_string(string):
 	word_list = [i.lower() for i in string.split(',')]
 	cleaned_list = []
 	for word in word_list:
@@ -59,7 +59,7 @@ class BotNotifier():
 		@self.listener.message_handler(content_types=['text'])
 		def handle_text(message):
 			if self.setup_step.get(message.chat.id) == 'setup_keys':
-				s_keys = tag_strip(message.text)
+				s_keys = parse_string(message.text)
 				try:
 					db_handler.add_user(message.chat.id, s_keys)
 				except db_handler.sqlite3.IntegrityError:
