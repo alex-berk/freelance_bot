@@ -26,6 +26,7 @@ class BotNotifier(TeleBot):
 	def __init__(self, token, admin_chat_id):
 		super().__init__(token)
 		self.admin_chat_id = admin_chat_id
+		self.username = self.get_me().username
 		self.setup_step = {}
 
 		@self.message_handler(commands=['status', 'start', 'keywords', 'cancel', 'stop'])
@@ -74,7 +75,7 @@ class BotNotifier(TeleBot):
 				logger.debug(f"Got random message {message}")
 
 	def verify_command(self, text, command):
-		return text == '/' + command or text == ''.join(['/', command, '@', self.get_me().username])
+		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
 
 	def send_message(self, message, chat_id=None, link=None, disable_preview=False):
 		logger.debug(f"Sending message to {chat_id}")
@@ -88,7 +89,11 @@ class BotNotifier(TeleBot):
 			params['reply_markup'] = json.dumps({'inline_keyboard': [[{'text': anchor, 'url': url}]]})
 		r = requests.post(f'https://api.telegram.org/bot{self.token}/sendMessage', params=params)
 		if not json.loads(r.text)['ok']:
-			logger.error(f"Message not been sent!, Got response: {r.text}; {chat_id}; {link}; {disable_preview}")
+			if json.loads(r.text)["error_code"] == 403:
+				logger.warning(f"Bot was kicked from the chat {chat_id}. Deleting chat from db.")
+				db_handler.delete_user(chat_id)
+			else:
+				logger.error(f"Message not been sent!, Got response: {r.text}; {chat_id}; {link}; {disable_preview}")
 
 	def send_sticker(self, sticker_id, chat_id=None):
 		try:
@@ -107,7 +112,7 @@ class BotNotifier(TeleBot):
 
 	def setup_keys(self, chat_id):
 		self.setup_step[chat_id] = 'setup_keys'
-		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в названии, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, символов и пробелов\n<code>Пример:</code>\n<code>node js, js, фронтенд</code>\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\nОтменить настройку можно командой /cancel'
+		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в названии, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов\n<code>Пример:</code>\n<code>node js, js, фронтенд</code>\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\nОтменить настройку можно командой /cancel'
 		current_keys = db_handler.get_user_skeys(chat_id)
 		self.send_message(setup_text, chat_id)
 		if current_keys: self.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>', chat_id)

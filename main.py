@@ -18,7 +18,7 @@ file_handler.setFormatter(formatter)
 
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.INFO)
-stream_handler.setFormatter(logging.Formatter('\n[%(asctime)s] %(message)s', '%H:%M:%S'))
+stream_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', '%H:%M:%S'))
 
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
