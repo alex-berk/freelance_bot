@@ -39,7 +39,7 @@ def tasks_sender(task_list):
 	for task in task_list[::-1]:
 		search_body = set(string_cleaner(task['title']) + task['tags'])
 		relevant_users = db_handler.get_relevant_users_ids(search_body)
-		logger.debug(f"Found task {task['id'], task['tags']} for the users {relevant_users}")
+		if relevant_users: logger.debug(f"Found task {task['id'], task['tags']} for the users {relevant_users}")
 		for user_id in relevant_users:
 			bot.send_job(task, user_id)
 

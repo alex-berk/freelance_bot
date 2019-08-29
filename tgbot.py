@@ -18,7 +18,7 @@ def parse_string(string):
 			else:
 				cleaned_word += ' '
 		cleaned_word = cleaned_word.strip()
-		if cleaned_word: cleaned_list.append(cleaned_word)
+		if cleaned_word and cleaned_word not in cleaned_list: cleaned_list.append(cleaned_word)
 	return cleaned_list
 
 
