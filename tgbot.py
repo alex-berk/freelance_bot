@@ -50,11 +50,17 @@ class BotNotifier(TeleBot):
 				self.send_message('Операция отменена', message.chat.id)
 			elif self.verify_command(message.text, 'stop'):
 				self.setup_step[message.chat.id] = 'stop_tacking'
-				self.send_message('Вы точно хотите остановить отслеживание?\n(Напишитие "Да" чтобы подтвердить, /cancel для отмены)', message.chat.id, force_reply=True)
+				self.send_message('Вы точно хотите остановить отслеживание?\n(Нажмите "Да" чтобы подтвердить, "Нет" чтобы продолжить получать уведомления)', message.chat.id, force_reply=True, keyboard=['Да', 'Нет'])
 
 		@self.message_handler(content_types=['text'])
 		def handle_text(message):
-			if self.setup_step.get(message.chat.id) == 'setup_keys':
+			if message.text.lower() in ['нет', 'отмена']:
+				if self.setup_step[message.chat.id]:
+					self.setup_step[message.chat.id] = None
+					self.send_message('Операция отменена', message.chat.id)
+				else:
+					self.send_message('Нечего отменить', message.chat.id)
+			elif self.setup_step.get(message.chat.id) == 'setup_keys':
 				s_keys = parse_string(message.text)
 				try:
 					db_handler.add_user(message.chat.id, s_keys)
@@ -80,14 +86,18 @@ class BotNotifier(TeleBot):
 	def verify_command(self, text, command):
 		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
 
-	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False):
+	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False, keyboard=[]):
 		logger.debug(f"Sending message to {chat_id}")
 		if not chat_id: chat_id = self.admin_chat_id
 
 		reply_markup = {}
 
-		if force_reply:
-			reply_markup['force_reply'] = True
+		if keyboard:
+			reply_markup['keyboard'] = [[{'text': text}] for text in keyboard]
+			reply_markup['resize_keyboard'] = True
+			reply_markup['one_time_keyboard'] = True
+		else:
+			reply_markup['remove_keyboard'] = True
 
 		if link:
 			try:
@@ -102,7 +112,7 @@ class BotNotifier(TeleBot):
 
 
 		params = {'chat_id': chat_id, 'text': message, 'parse_mode':'html', 'disable_web_page_preview': disable_preview, 'force_reply': force_reply}
-		if reply_markup: params['reply_markup'] = json.dumps(reply_markup)
+		params['reply_markup'] = json.dumps(reply_markup)
 		
 		r = requests.post(f'https://api.telegram.org/bot{self.token}/sendMessage', params=params)
 		if not json.loads(r.text)['ok']:
@@ -129,8 +139,7 @@ class BotNotifier(TeleBot):
 
 	def setup_keys(self, chat_id):
 		self.setup_step[chat_id] = 'setup_keys'
-		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\n\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>\n\nОтменить настройку можно командой /cancel'
+		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\n\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>'
 		current_keys = db_handler.get_user_skeys(chat_id)
-		self.send_message(setup_text, chat_id, force_reply=True)
 		if current_keys: self.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>', chat_id)
-
+		self.send_message(setup_text, chat_id, force_reply=True, keyboard=['Отмена'])
