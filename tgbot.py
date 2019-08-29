@@ -31,7 +31,7 @@ class BotNotifier(TeleBot):
 
 		@self.message_handler(commands=['status', 'start', 'keywords', 'cancel', 'stop'])
 		def handle_commands(message):
-			logger.info(f'Got message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.type if not message.chat.title else message.chat.title}, with text "{message.text}"')
+			logger.debug(f'Got message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.title if message.chat.title else message.chat.type}, with text "{message.text}"')
 			if self.verify_command(message.text, 'status'):
 				status_text = 'Up and running!'
 				if self.setup_step.get(message.chat.id): status_text += '\nCurrent setup step: ' + self.setup_step[message.chat.id]
@@ -50,7 +50,7 @@ class BotNotifier(TeleBot):
 				self.send_message('Операция отменена', message.chat.id)
 			elif self.verify_command(message.text, 'stop'):
 				self.setup_step[message.chat.id] = 'stop_tacking'
-				self.send_message('Вы точно хотите остановить отслеживание?\n(Напишитие "Да" чтобы подтвердить)', message.chat.id, force_reply=True)
+				self.send_message('Вы точно хотите остановить отслеживание?\n(Напишитие "Да" чтобы подтвердить, /cancel для отмены)', message.chat.id, force_reply=True)
 
 		@self.message_handler(content_types=['text'])
 		def handle_text(message):
@@ -70,11 +70,11 @@ class BotNotifier(TeleBot):
 					self.send_message("Отслеживание остановлено. Снова начать отслеживать задачи можно если набрать комманду /start", message.chat.id)
 					self.setup_step[message.chat.id] = None
 			else:
-				logger.debug(f"Got random message {message}")
+				logger.debug(f'Got random message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.title if message.chat.title else message.chat.type}, with text "{message.text}"')
 
 		@self.callback_query_handler(func=lambda call:True)
 		def test_callback(call):
-			logger.info(call)
+			logger.info(f'Got callback_query {call}')
 
 
 	def verify_command(self, text, command):
@@ -129,7 +129,7 @@ class BotNotifier(TeleBot):
 
 	def setup_keys(self, chat_id):
 		self.setup_step[chat_id] = 'setup_keys'
-		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\nОтменить настройку можно командой /cancel\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>'
+		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\n\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>\n\nОтменить настройку можно командой /cancel'
 		current_keys = db_handler.get_user_skeys(chat_id)
 		self.send_message(setup_text, chat_id, force_reply=True)
 		if current_keys: self.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>', chat_id)
