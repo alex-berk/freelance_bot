@@ -104,7 +104,6 @@ class BotNotifier(TeleBot):
 		params = {'chat_id': chat_id, 'text': message, 'parse_mode':'html', 'disable_web_page_preview': disable_preview, 'force_reply': force_reply}
 		if reply_markup: params['reply_markup'] = json.dumps(reply_markup)
 		
-		print(params)
 		r = requests.post(f'https://api.telegram.org/bot{self.token}/sendMessage', params=params)
 		if not json.loads(r.text)['ok']:
 			if json.loads(r.text)["error_code"] == 403:
