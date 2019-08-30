@@ -14,8 +14,6 @@ class BotNotifier(TeleBot):
 		self.username = self.get_me().username
 		self.setup_step = {}
 
-	def verify_command(self, text, command):
-		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
 
 	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False, keyboard=[]):
 		logger.debug(f"Sending message to {chat_id}")
@@ -24,7 +22,10 @@ class BotNotifier(TeleBot):
 		reply_markup = {}
 
 		if keyboard:
-			reply_markup['keyboard'] = [[{'text': text}] for text in keyboard]
+			if type(keyboard[-1]) == int:
+				reply_markup['keyboard'] = self.generate_keyboard(*keyboard)
+			else:
+				reply_markup['keyboard'] = self.generate_keyboard(keyboard)
 			reply_markup['resize_keyboard'] = True
 			reply_markup['one_time_keyboard'] = True
 		else:
@@ -60,3 +61,18 @@ class BotNotifier(TeleBot):
 			r = requests.post(f'https://api.telegram.org/bot{self.token}/sendSticker', params=params)
 		except Exception as e:
 			logger.error(e)
+
+	def verify_command(self, text, command):
+		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
+
+	@staticmethod
+	def generate_keyboard(buttons, row_len=1):
+		row, rows, counter = [], [], 0
+		for button in buttons:
+			row.append({'text': button})
+			counter += 1
+			if counter == row_len:
+				rows.append(row)
+				row, counter = [], 0
+		if row: rows.append(row)
+		return rows

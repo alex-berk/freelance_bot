@@ -130,7 +130,7 @@ def subprocess():
 
 		elif bot.verify_command(message.text, 'stop'):
 			bot.setup_step[message.chat.id] = 'stop_tacking'
-			bot.send_message('Вы точно хотите остановить отслеживание?\n(Нажмите "Да" чтобы подтвердить, "Нет" чтобы продолжить получать уведомления)', message.chat.id, force_reply=True, keyboard=['Да', 'Нет'])
+			bot.send_message('Вы точно хотите остановить отслеживание?', message.chat.id, force_reply=True, keyboard=(['Да', 'Нет'], 2))
 
 		elif bot.verify_command(message.text, 'cancel'):
 			bot.setup_step[message.chat.id] = None
