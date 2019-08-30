@@ -9,20 +9,27 @@ import db_handler
 logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H:%M:%S')
-
-if not os.path.exists('logs'): os.mkdir('logs')
 a_date = datetime.date.today()
-file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
-file_handler.setFormatter(formatter)
 
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.INFO)
 stream_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', '%H:%M:%S'))
 
-logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
+def set_file_logger():
+	global logger
+	try:
+		logger.removeHandler(file_handler)
+	except UnboundLocalError:
+		pass
+
+	if not os.path.exists('logs'): os.mkdir('logs')
+	formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H:%M:%S')
+	file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
+	file_handler.setFormatter(formatter)
+	logger.addHandler(file_handler)
+set_file_logger()
 
 def string_cleaner(dirty_srtring):
 	word_list, curr_word = [], ''
@@ -66,20 +73,13 @@ def parse_tasks(retry=False):
 							'url': 'https://freelansim.ru' + task['href']})
 	return parsed_tasks
 
-def check_date_on_logger():
-	global file_handler, a_date
-	if a_date != datetime.date.today():
-		a_date = datetime.date.today()
-		logger.removeHandler(file_handler)
-		formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H:%M:%S')
-		file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
-		file_handler.setFormatter(formatter)
-		logger.addHandler(file_handler)
-
 
 def main():
+	global a_date
 	while True:
-		check_date_on_logger()
+		if a_date != datetime.date.today():
+			a_date = datetime.date.today()
+			set_file_logger()
 		new_tasks = [task for task in parse_tasks() if task['id'] not in db_handler.get_tasks_ids() and not db_handler.check_task_id(task['id'])]
 		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
 		for task in new_tasks:
