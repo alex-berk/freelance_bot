@@ -7,21 +7,6 @@ import db_handler
 logger = logging.getLogger('__main__')
 
 
-def parse_string(string):
-	word_list = [i.lower() for i in string.split(',')]
-	cleaned_list = []
-	for word in word_list:
-		cleaned_word = ''
-		for symb in word:
-			if symb.isalpha() or symb.isdigit() or symb == ' ':
-				cleaned_word += symb
-			else:
-				cleaned_word += ' '
-		cleaned_word = cleaned_word.strip()
-		if cleaned_word and cleaned_word not in cleaned_list: cleaned_list.append(cleaned_word)
-	return cleaned_list
-
-
 class BotNotifier(TeleBot):
 	def __init__(self, token, admin_chat_id):
 		super().__init__(token)

@@ -35,20 +35,23 @@ set_file_logger()
 
 bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 
-def string_cleaner(dirty_srtring):
-	word_list, curr_word = [], ''
-	for s in dirty_srtring:
-		if s.isalpha():
-			curr_word += s.lower()
-		else:
-			if curr_word: word_list.append(curr_word)
-			curr_word = ''
-	if curr_word: word_list.append(curr_word)
-	return word_list
+def parse_string(string, sep=None):
+	word_list = [i.lower() for i in string.split(sep)]
+	cleaned_list = []
+	for word in word_list:
+		cleaned_word = ''
+		for symb in word:
+			if symb.isalpha() or symb.isdigit() or symb == ' ':
+				cleaned_word += symb
+			else:
+				cleaned_word += ' '
+		cleaned_word = cleaned_word.strip()
+		if cleaned_word and cleaned_word not in cleaned_list: cleaned_list.append(cleaned_word)
+	return cleaned_list
 
 def tasks_sender(task_list):
 	for task in task_list[::-1]:
-		search_body = set(string_cleaner(task['title']) + task['tags'])
+		search_body = set(parse_string(task['title']) + task['tags'])
 		relevant_users = db_handler.get_relevant_users_ids(search_body)
 		if relevant_users: logger.debug(f"Found task {task['id'], task['tags']} for the users {relevant_users}")
 		for user_id in relevant_users:
@@ -143,7 +146,7 @@ def subprocess():
 				bot.send_message('Нечего отменить', message.chat.id)
 		
 		elif bot.setup_step.get(message.chat.id) == 'setup_keys':
-			s_keys = parse_string(message.text)
+			s_keys = parse_string(message.text, sep=',')
 			try:
 				db_handler.add_user(message.chat.id, s_keys)
 			except db_handler.sqlite3.IntegrityError:
