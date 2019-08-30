@@ -71,7 +71,9 @@ def check_date_on_logger():
 	if a_date != datetime.date.today():
 		a_date = datetime.date.today()
 		logger.removeHandler(file_handler)
+		formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H:%M:%S')
 		file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
+		file_handler.setFormatter(formatter)
 		logger.addHandler(file_handler)
 
 
@@ -94,6 +96,7 @@ def subprocess():
 bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 
 if __name__ == '__main__':
+	os.system('cls' if os.name=='nt' else 'clear')
 	logger.debug('Started')
 
 	process_1 = Process(target=main)

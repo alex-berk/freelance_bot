@@ -47,7 +47,7 @@ class BotNotifier(TeleBot):
 				self.setup_keys(message.chat.id)
 			elif self.verify_command(message.text, 'cancel'):
 				self.setup_step[message.chat.id] = None
-				self.send_message('Операция отменена', message.chat.id)
+				self.send_message('Действие отменено', message.chat.id)
 			elif self.verify_command(message.text, 'stop'):
 				self.setup_step[message.chat.id] = 'stop_tacking'
 				self.send_message('Вы точно хотите остановить отслеживание?\n(Нажмите "Да" чтобы подтвердить, "Нет" чтобы продолжить получать уведомления)', message.chat.id, force_reply=True, keyboard=['Да', 'Нет'])
