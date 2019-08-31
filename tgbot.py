@@ -22,7 +22,7 @@ class BotNotifier(TeleBot):
 		reply_markup = {}
 
 		if keyboard:
-			if type(keyboard[-1]) == int:
+			if type(keyboard[-1]) is int:
 				reply_markup['keyboard'] = self.generate_keyboard(*keyboard)
 			else:
 				reply_markup['keyboard'] = self.generate_keyboard(keyboard)
@@ -66,13 +66,13 @@ class BotNotifier(TeleBot):
 		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
 
 	@staticmethod
-	def generate_keyboard(buttons, row_len=1):
-		row, rows, counter = [], [], 0
+	def generate_keyboard(buttons, row_len=2):
+		keyboard, row, counter = [], [], 0
 		for button in buttons:
 			row.append({'text': button})
 			counter += 1
 			if counter == row_len:
-				rows.append(row)
+				keyboard.append(row)
 				row, counter = [], 0
-		if row: rows.append(row)
-		return rows
+		if row: keyboard.append(row)
+		return keyboard
