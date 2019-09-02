@@ -86,11 +86,14 @@ def parse_tasks(retry=False):
 
 def bot_listener():
 	def setup_keys(chat_id):
-		bot.setup_step[chat_id] = 'setup_keys'
-		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\n\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>'
 		current_keys = db_handler.get_user_skeys(chat_id)
-		if current_keys: bot.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>', chat_id)
-		bot.send_message(setup_text, chat_id, force_reply=True, keyboard=['Отмена'])
+		if current_keys and bot.setup_step.get(chat_id) != 'setup_keys_replace':
+			bot.setup_step[chat_id] = 'setup_keys'
+			bot.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>\n\nВы хотите добавить новые ключи к существующим или заменить их?', chat_id, force_reply=True, keyboard=['Добавить', 'Заменить'])
+		else:
+			bot.setup_step[chat_id] = 'setup_keys'
+			setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\n\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>'
+			bot.send_message(setup_text, chat_id, force_reply=True, keyboard=['Отмена'])
 
 
 	@bot.message_handler(commands=['status', 'start', 'keywords', 'cancel', 'stop'])
@@ -102,7 +105,6 @@ def bot_listener():
 			bot.send_message(status_text, message.chat.id)
 		
 		elif bot.verify_command(message.text, 'start'):
-			bot.setup_step[message.chat.id] = None
 			if db_handler.get_user_skeys(message.chat.id):
 				bot.send_message('У вас уже настроены ключевые слова для поиска.\nЗаново их задать можно коммандой /keywords', message.chat.id)
 			else:
@@ -129,7 +131,25 @@ def bot_listener():
 			else:
 				bot.send_message('Нечего отменить', message.chat.id)
 		
-		elif bot.setup_step.get(message.chat.id) == 'setup_keys':
+		elif bot.setup_step.get(message.chat.id) == 'setup_keys' and message.text.lower() == 'добавить':
+			bot.setup_step[message.chat.id] = 'setup_keys_add'
+			bot.send_message(f'Хорошо. Напишите слова, которые нужно добавить к вашему списку', message.chat.id, force_reply=True, keyboard=['Отмена'])
+
+		elif bot.setup_step.get(message.chat.id) == 'setup_keys' and message.text.lower() == 'заменить':
+			bot.setup_step[message.chat.id] = 'setup_keys_replace'
+			bot.send_message(f'Хорошо. Напишите слова, которыми нужно заменить существующие', message.chat.id, force_reply=True, keyboard=['Отмена'])
+
+		elif bot.setup_step.get(message.chat.id) == 'setup_keys_add':
+			s_keys_old = db_handler.get_user_skeys(message.chat.id)
+			s_keys_new = [key for key in  parse_string(message.text, sep=',') if key not in s_keys_old]
+			s_keys = s_keys_old + s_keys_new
+			db_handler.update_user_keys(message.chat.id, s_keys)
+			confirm_text = 'Все готово. Ваши ключевые слова для поиска:\n<b>' + ", ".join(s_keys) + '</b>\n\nНачинаю отслеживать задачи'
+			bot.send_message(confirm_text, message.chat.id)
+			bot.send_sticker('CAADAgADBwIAArD72weq7luNKMN99BYE', message.chat.id)
+			bot.setup_step[message.chat.id] = None
+		
+		elif bot.setup_step.get(message.chat.id) == 'setup_keys' or bot.setup_step.get(message.chat.id) == 'setup_keys_replace':
 			s_keys = parse_string(message.text, sep=',')
 			try:
 				db_handler.add_user(message.chat.id, s_keys)
@@ -157,7 +177,7 @@ def bot_listener():
 def parser():
 	a_date = datetime.date.today()
 	parsed_tasks_ids = []
-	while True:
+	while False:
 		if a_date != datetime.date.today():
 			a_date = datetime.date.today()
 			logger.debug('Setting logfile name to actual date')
