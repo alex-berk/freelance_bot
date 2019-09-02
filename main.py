@@ -11,15 +11,16 @@ import db_handler
 logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
 
-a_date = datetime.date.today()
-
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.INFO)
 stream_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', '%H:%M:%S'))
 
 logger.addHandler(stream_handler)
 
-def set_file_logger():
+bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
+
+
+def set_file_logger(date):
 	global logger
 	try:
 		logger.removeHandler(file_handler)
@@ -27,13 +28,11 @@ def set_file_logger():
 		pass
 
 	if not os.path.exists('logs'): os.mkdir('logs')
-	formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H:%M:%S')
-	file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
+	formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H-%M-%S')
+	file_handler = logging.FileHandler(os.path.join('logs', str(date) + '.log'))
 	file_handler.setFormatter(formatter)
 	logger.addHandler(file_handler)
-set_file_logger()
-
-bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
+set_file_logger(datetime.date.today())
 
 def parse_string(string, sep=None):
 	word_list = [i.lower() for i in string.split(sep)]
@@ -85,22 +84,7 @@ def parse_tasks(retry=False):
 	return parsed_tasks
 
 
-def main():
-	global a_date
-	while True:
-		if a_date != datetime.date.today():
-			a_date = datetime.date.today()
-			set_file_logger()
-		new_tasks = [task for task in parse_tasks() if task['id'] not in db_handler.get_tasks_ids() and not db_handler.check_task_id(task['id'])]
-		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
-		for task in new_tasks:
-			print(f"{task['title']}, {task['price']}, {task['price_format']}")
-			logger.debug(f"Sending task {task['id']} to db")
-			db_handler.add_task(task)
-		tasks_sender(new_tasks)
-		time.sleep(60 * 5)
-
-def subprocess():
+def bot_listener():
 	def setup_keys(chat_id):
 		bot.setup_step[chat_id] = 'setup_keys'
 		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\n\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>'
@@ -168,16 +152,34 @@ def subprocess():
 	def test_callback(call):
 		logger.info(f'Got callback_query {call}')
 	
-
 	bot.polling()
+
+def parser():
+	a_date = datetime.date.today()
+	parsed_tasks_ids = []
+	while True:
+		if a_date != datetime.date.today():
+			a_date = datetime.date.today()
+			logger.debug('Setting logfile name to actual date')
+			set_file_logger(a_date)
+		parsed_tasks = parse_tasks()
+		new_tasks = [task for task in parsed_tasks if task['id'] not in parsed_tasks_ids and not db_handler.check_task_id(task['id'])]
+		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
+		for task in new_tasks:
+			print(f"{task['title']}, {task['price']}, {task['price_format']}")
+			logger.debug(f"Sending task {task['id']} to db")
+			db_handler.add_task(task)
+		tasks_sender(new_tasks)
+		parsed_tasks_ids = [task['id'] for task in parsed_tasks]
+		time.sleep(60 * 5)
 
 
 if __name__ == '__main__':
 	os.system('cls' if os.name=='nt' else 'clear')
 	logger.debug('Started')
 
-	process_1 = Process(target=main)
-	process_2 = Process(target=subprocess)
+	process_1 = Process(target=parser)
+	process_2 = Process(target=bot_listener)
 	process_1.start()
 	process_2.start()
 	process_1.join()

@@ -102,6 +102,7 @@ def get_tasks_ids(q=25):
 	return [i[0] for i in cursor.fetchmany(q)]
 
 def check_task_id(task_id):
+	logger.debug(f'Searching for the task {task_id}')
 	conn = sqlite3.connect('data.db')
 	cursor = conn.cursor()
 	cursor.execute('SELECT id FROM tasks WHERE id=?', (task_id,))
