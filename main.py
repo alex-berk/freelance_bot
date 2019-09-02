@@ -89,12 +89,17 @@ def bot_listener():
 		current_keys = db_handler.get_user_skeys(chat_id)
 		if current_keys and bot.setup_step.get(chat_id) != 'setup_keys_replace':
 			bot.setup_step[chat_id] = 'setup_keys'
-			bot.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>\n\nВы хотите добавить новые ключи к существующим или заменить их?', chat_id, force_reply=True, keyboard=['Добавить', 'Заменить'])
+			bot.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>\n\nВы хотите добавить новые ключи к существующим или заменить их?', chat_id, keyboard=['Добавить', 'Заменить', 'Отмена'])
 		else:
-			bot.setup_step[chat_id] = 'setup_keys'
+			bot.setup_step[chat_id] = 'setup_keys_init'
 			setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\n\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>'
-			bot.send_message(setup_text, chat_id, force_reply=True, keyboard=['Отмена'])
+			bot.send_message(setup_text, chat_id, keyboard=['Отмена'])
 
+	def confirm_keys_setup(chat_id, s_keys):
+		confirm_text = 'Все готово. Ваши ключевые слова для поиска:\n<b>' + ", ".join(s_keys) + '</b>\n\nНачинаю отслеживать задачи'
+		bot.send_message(confirm_text, chat_id)
+		bot.send_sticker('CAADAgADBwIAArD72weq7luNKMN99BYE', chat_id)
+		bot.setup_step[chat_id] = None
 
 	@bot.message_handler(commands=['status', 'start', 'keywords', 'cancel', 'stop'])
 	def handle_commands(message):
@@ -116,7 +121,7 @@ def bot_listener():
 
 		elif bot.verify_command(message.text, 'stop'):
 			bot.setup_step[message.chat.id] = 'stop_tacking'
-			bot.send_message('Вы точно хотите остановить отслеживание?', message.chat.id, force_reply=True, keyboard=['Да', 'Нет'])
+			bot.send_message('Вы точно хотите остановить отслеживание?', message.chat.id, keyboard=['Да', 'Нет'])
 
 		elif bot.verify_command(message.text, 'cancel'):
 			bot.setup_step[message.chat.id] = None
@@ -133,32 +138,26 @@ def bot_listener():
 		
 		elif bot.setup_step.get(message.chat.id) == 'setup_keys' and message.text.lower() == 'добавить':
 			bot.setup_step[message.chat.id] = 'setup_keys_add'
-			bot.send_message(f'Хорошо. Напишите слова, которые нужно добавить к вашему списку', message.chat.id, force_reply=True, keyboard=['Отмена'])
+			bot.send_message(f'Хорошо. Напишите слова, которые нужно добавить к вашему списку', message.chat.id, keyboard=['Отмена'])
 
 		elif bot.setup_step.get(message.chat.id) == 'setup_keys' and message.text.lower() == 'заменить':
 			bot.setup_step[message.chat.id] = 'setup_keys_replace'
-			bot.send_message(f'Хорошо. Напишите слова, которыми нужно заменить существующие', message.chat.id, force_reply=True, keyboard=['Отмена'])
+			bot.send_message(f'Хорошо. Напишите слова, которыми нужно заменить существующие', message.chat.id, keyboard=['Отмена'])
 
 		elif bot.setup_step.get(message.chat.id) == 'setup_keys_add':
 			s_keys_old = db_handler.get_user_skeys(message.chat.id)
 			s_keys_new = [key for key in  parse_string(message.text, sep=',') if key not in s_keys_old]
 			s_keys = s_keys_old + s_keys_new
 			db_handler.update_user_keys(message.chat.id, s_keys)
-			confirm_text = 'Все готово. Ваши ключевые слова для поиска:\n<b>' + ", ".join(s_keys) + '</b>\n\nНачинаю отслеживать задачи'
-			bot.send_message(confirm_text, message.chat.id)
-			bot.send_sticker('CAADAgADBwIAArD72weq7luNKMN99BYE', message.chat.id)
-			bot.setup_step[message.chat.id] = None
+			confirm_keys_setup(message.chat.id, s_keys)
 		
-		elif bot.setup_step.get(message.chat.id) == 'setup_keys' or bot.setup_step.get(message.chat.id) == 'setup_keys_replace':
+		elif bot.setup_step.get(message.chat.id) == 'setup_keys_init' or bot.setup_step.get(message.chat.id) == 'setup_keys_replace':
 			s_keys = parse_string(message.text, sep=',')
 			try:
 				db_handler.add_user(message.chat.id, s_keys)
 			except db_handler.sqlite3.IntegrityError:
 				db_handler.update_user_keys(message.chat.id, s_keys)
-			confirm_text = 'Все готово. Ваши ключевые слова для поиска:\n<b>' + ", ".join(s_keys) + '</b>\n\nНачинаю отслеживать задачи'
-			bot.send_message(confirm_text, message.chat.id)
-			bot.send_sticker('CAADAgADBwIAArD72weq7luNKMN99BYE', message.chat.id)
-			bot.setup_step[message.chat.id] = None
+			confirm_keys_setup(message.chat.id, s_keys)
 		
 		elif bot.setup_step.get(message.chat.id) == 'stop_tacking':
 			if message.text.lower() == 'да':
@@ -177,7 +176,7 @@ def bot_listener():
 def parser():
 	a_date = datetime.date.today()
 	parsed_tasks_ids = []
-	while False:
+	while True:
 		if a_date != datetime.date.today():
 			a_date = datetime.date.today()
 			logger.debug('Setting logfile name to actual date')

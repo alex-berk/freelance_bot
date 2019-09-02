@@ -22,6 +22,7 @@ class BotNotifier(TeleBot):
 		reply_markup = {}
 
 		if keyboard:
+			force_reply = True
 			if type(keyboard[-1]) is int:
 				reply_markup['keyboard'] = self.generate_keyboard(*keyboard)
 			else:
