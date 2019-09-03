@@ -106,7 +106,7 @@ def bot_listener():
 		logger.debug(f'Got message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.title if message.chat.title else message.chat.type}, with text "{message.text}"')
 		if bot.verify_command(message.text, 'status'):
 			status_text = 'Up and running!'
-			if bot.setup_step.get(message.chat.id, {'name': None})['name']: status_text += '\nCurrent setup step: ' + bot.setup_step[message.chat.id]
+			if bot.setup_step.get(message.chat.id, {'name': None})['name']: status_text += '\nCurrent setup step: ' + bot.setup_step[message.chat.id]['name']
 			bot.send_message(status_text, message.chat.id)
 		
 		elif bot.verify_command(message.text, 'start'):
@@ -129,7 +129,7 @@ def bot_listener():
 		
 	@bot.message_handler(content_types=['text'])
 	def handle_text(message):
-		if message.text.lower() in ['нет', '❌отмена']:
+		if message.text.lower() in ['нет', '❌ отмена']:
 			if bot.setup_step[message.chat.id]:
 				bot.setup_step[message.chat.id] = None
 				bot.send_message('Действие отменено', message.chat.id)
@@ -138,16 +138,16 @@ def bot_listener():
 		
 		elif bot.setup_step.get(message.chat.id, {'name': None})['name'] == 'setup_keys' and message.text.lower() == 'добавить':
 			bot.setup_step[message.chat.id] = {'name': 'setup_keys_add'}
-			bot.send_message(f'Хорошо. Напишите слова, которые нужно добавить к вашему списку', message.chat.id, keyboard=['❌ Отмена'])
+			bot.send_message(f'Напишите слова, которые нужно добавить к вашему списку', message.chat.id, keyboard=['❌ Отмена'])
 
 		elif bot.setup_step.get(message.chat.id, {'name': None})['name'] == 'setup_keys' and message.text.lower() == 'заменить':
 			bot.setup_step[message.chat.id] = {'name': 'setup_keys_replace'}
-			bot.send_message(f'Хорошо. Напишите слова, которыми нужно заменить существующие', message.chat.id, keyboard=['❌ Отмена'])
+			bot.send_message(f'Напишите слова, которыми нужно заменить существующие', message.chat.id, keyboard=['❌ Отмена'])
 
 		elif bot.setup_step.get(message.chat.id, {'name': None})['name'] == 'setup_keys' and message.text.lower() == 'удалить':
 			bot.setup_step[message.chat.id] = {'name': 'setup_keys_delete'}
 			bot.setup_step[message.chat.id]['working_keys'] = db_handler.get_user_skeys(message.chat.id)
-			bot.send_message(f'Хорошо. Напишите слова, которые нужно удалить через запятую или выберете их внизу, на выпадающей клавиатуре', message.chat.id, keyboard=['✅ Готово', '❌ Отмена'] + bot.setup_step[message.chat.id]['working_keys'])
+			bot.send_message(f'Напишите слова, которые нужно удалить через запятую или выберете их внизу, на выпадающей клавиатуре', message.chat.id, keyboard=['✅ Готово', '❌ Отмена'] + bot.setup_step[message.chat.id]['working_keys'])
 
 		elif bot.setup_step.get(message.chat.id, {'name': None})['name'] == 'setup_keys_add':
 			s_keys_old = db_handler.get_user_skeys(message.chat.id)
