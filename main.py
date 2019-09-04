@@ -69,19 +69,21 @@ def parse_tasks(retry=False):
 	try:
 		r = requests.get(url, headers=headers)
 		if retry: bot.send_message('Parser is up again')
-	except ConnectionError:
-		logger.warning('Parser is down')
+	except TimeoutError as e:
+		logger.error(f'Got Timeout error: {e}')
+		parse_tasks()
+	except ConnectionError as e:
+		logger.error(f'Got Connection error: {e}')
 		bot.send_message('Parser is down. Going to try to reconnect in 1 minute.')
 		time.sleep(60)
 		parse_tasks(retry=True)
+
 	tasks = json.loads(r.text)['tasks']
-	parsed_tasks = []
-	for task in tasks:
-		parsed_tasks.append({'title': task['title'], 'id': task['id'],
-							'price': task['price']['value'], 'price_format': task['price']['type'],
-							'tags': [tag['name'] for tag in task['tags']],
-							'url': 'https://freelansim.ru' + task['href']})
-	return parsed_tasks
+	return [{'title': task['title'], 'id': task['id'],
+			'price': task['price']['value'], 'price_format': task['price']['type'],
+			'tags': [tag['name'] for tag in task['tags']],
+			'url': 'https://freelansim.ru' + task['href']}
+			for task in tasks]
 
 
 def bot_listener():
