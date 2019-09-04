@@ -8,12 +8,14 @@ logger = logging.getLogger('__main__')
 
 
 class BotNotifier(TeleBot):
+	
+	context = {}
+
+	
 	def __init__(self, token, admin_chat_id):
 		super().__init__(token)
 		self.admin_chat_id = admin_chat_id
 		self.username = self.get_me().username
-		self.setup_step = {}
-
 
 	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False, keyboard=[]):
 		logger.debug(f"Sending message to {chat_id}")
@@ -65,6 +67,17 @@ class BotNotifier(TeleBot):
 
 	def verify_command(self, text, command):
 		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
+
+	def verify_step_message(self, message, step_name=None, message_text=None):
+		if step_name:
+			step_result = self.context.get(message.chat.id, {'name': None})['name'] == step_name
+		else:
+			step_result = True
+		if message_text:
+			message_result = message.text.lower() == message_text
+		else:
+			message_result = True
+		return step_result and message_result
 
 	@staticmethod
 	def generate_keyboard(buttons, row_len=2):
