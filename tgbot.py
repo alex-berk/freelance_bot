@@ -68,7 +68,7 @@ class BotNotifier(TeleBot):
 	def verify_command(self, text, command):
 		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
 
-	def verify_step_message(self, message, step_name=None, message_text=None):
+	def verify_context_message(self, message, step_name=None, message_text=None):
 		if step_name:
 			step_result = self.context.get(message.chat.id, {'name': None})['name'] == step_name
 		else:

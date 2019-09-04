@@ -87,6 +87,7 @@ def parse_tasks(retry=False):
 
 
 def bot_listener():
+
 	def setup_keys(chat_id):
 		current_keys = db_handler.get_user_skeys(chat_id)
 		if current_keys and bot.context.get(chat_id) != 'setup_keys_replace':
@@ -96,8 +97,6 @@ def bot_listener():
 			bot.context[chat_id] = {'name': 'setup_keys_init'}
 			setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов.\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\n\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>'
 			bot.send_message(setup_text, chat_id, keyboard=['❌ Отмена'])
-
-	
 
 	def confirm_keys_setup(chat_id, s_keys):
 		confirm_text = 'Все готово. Ваши ключевые слова для поиска:\n<b>' + ", ".join(s_keys) + '</b>\n\nНачинаю отслеживать задачи'
@@ -140,27 +139,27 @@ def bot_listener():
 			else:
 				bot.send_message('Нечего отменить', message.chat.id)
 		
-		elif bot.verify_step_message(message, 'setup_keys', 'добавить'):
+		elif bot.verify_context_message(message, 'setup_keys', 'добавить'):
 			bot.context[message.chat.id] = {'name': 'setup_keys_add'}
 			bot.send_message(f'Напишите через запятую слова, которые нужно добавить к вашему списку', message.chat.id, keyboard=['❌ Отмена'])
 
-		elif bot.verify_step_message(message, 'setup_keys', 'заменить'):
+		elif bot.verify_context_message(message, 'setup_keys', 'заменить'):
 			bot.context[message.chat.id] = {'name': 'setup_keys_replace'}
 			bot.send_message(f'Напишите слова, которыми нужно заменить существующие', message.chat.id, keyboard=['❌ Отмена'])
 
-		elif bot.verify_step_message(message, 'setup_keys', 'удалить'):
+		elif bot.verify_context_message(message, 'setup_keys', 'удалить'):
 			bot.context[message.chat.id] = {'name': 'setup_keys_delete'}
 			bot.context[message.chat.id]['working_keys'] = db_handler.get_user_skeys(message.chat.id)
 			bot.send_message(f'Напишите слова, которые нужно удалить через запятую или выберете их внизу, на выпадающей клавиатуре', message.chat.id, keyboard=['✅ Готово', '❌ Отмена'] + bot.context[message.chat.id]['working_keys'])
 
-		elif bot.verify_step_message(message, 'setup_keys_add'):
+		elif bot.verify_context_message(message, 'setup_keys_add'):
 			s_keys_old = db_handler.get_user_skeys(message.chat.id)
 			s_keys_new = [key for key in  parse_string(message.text, sep=',') if key not in s_keys_old]
 			s_keys = s_keys_old + s_keys_new
 			db_handler.update_user_keys(message.chat.id, s_keys)
 			confirm_keys_setup(message.chat.id, s_keys)
 		
-		elif bot.verify_step_message(message, 'setup_keys_init') or bot.verify_step_message(message, 'setup_keys_replace'):
+		elif bot.verify_context_message(message, 'setup_keys_init') or bot.verify_context_message(message, 'setup_keys_replace'):
 			s_keys = parse_string(message.text, sep=',')
 			try:
 				db_handler.add_user(message.chat.id, s_keys)
@@ -168,7 +167,7 @@ def bot_listener():
 				db_handler.update_user_keys(message.chat.id, s_keys)
 			confirm_keys_setup(message.chat.id, s_keys)
 		
-		elif bot.verify_step_message(message, 'setup_keys_delete'):
+		elif bot.verify_context_message(message, 'setup_keys_delete'):
 			msg_words = parse_string(message.text.lower(), ',')
 			if msg_words == ['готово']:
 				db_handler.update_user_keys(message.chat.id, bot.context[message.chat.id]['working_keys'])
@@ -182,7 +181,7 @@ def bot_listener():
 					except ValueError:
 						bot.send_message(f'Не нашёл слова <b>{word}</b>' , message.chat.id, keyboard=['✅ Готово', '❌ Отмена'] + bot.context[message.chat.id]['working_keys'])
 
-		elif bot.verify_step_message(message, 'stop_tacking', 'да'):
+		elif bot.verify_context_message(message, 'stop_tacking', 'да'):
 			db_handler.delete_user(message.chat.id)
 			bot.send_message("Отслеживание остановлено. Снова начать отслеживать задачи можно если набрать комманду /start", message.chat.id)
 			bot.context[message.chat.id] = None
