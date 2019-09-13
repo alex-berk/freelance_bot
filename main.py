@@ -7,6 +7,7 @@ import requests
 import json
 import tgbot
 import db_handler
+from parsers import JsonParser
 
 logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
@@ -58,32 +59,7 @@ def tasks_sender(task_list):
 			tags = ', '.join(task['tags'])
 			price = task['price'] + ' <i>за час</i>' if task['price_format'] == 'per_hour' else task['price']
 			text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
-			bot.send_message(text, link=task['url'], chat_id=user_id, disable_preview=True)
-
-def parse_tasks(retry=False):
-	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
-	headers = {	'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)',
-				'Accept': 'application/json',
-				'X-App-Version': '1'}
-	logger.info("Sending request")
-	try:
-		r = requests.get(url, headers=headers)
-		if retry: bot.send_message('Parser is up again')
-	except TimeoutError as e:
-		logger.error(f'Got Timeout error: {e}')
-		parse_tasks()
-	except ConnectionError as e:
-		logger.error(f'Got Connection error: {e}')
-		bot.send_message('Parser is down. Going to try to reconnect in 1 minute.')
-		time.sleep(60)
-		parse_tasks(retry=True)
-
-	tasks = json.loads(r.text)['tasks']
-	return [{'title': task['title'], 'id': task['id'],
-			'price': task['price']['value'], 'price_format': task['price']['type'],
-			'tags': [tag['name'] for tag in task['tags']],
-			'url': 'https://freelansim.ru' + task['href']}
-			for task in tasks]
+			bot.send_message(text, link=task['link'], chat_id=user_id, disable_preview=True)
 
 
 def bot_listener():
@@ -197,12 +173,28 @@ def bot_listener():
 def parser():
 	a_date = datetime.date.today()
 	parsed_tasks_ids = []
+
+	flnsm_params = {
+		'url': 'https://freelansim.ru/tasks',
+		'headers': {'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)', 'Accept': 'application/json', 'X-App-Version': '1'},
+
+		'containers': 'tasks',
+
+		'title': 'title',
+		'price': 'price/value',
+		'price_format': 'price/type',
+		'tags': 'tags//name',
+		'link': 'href',
+		'id': 'id'
+	}
+	freelansim_parser = JsonParser(**flnsm_params)
+
 	while True:
 		if a_date != datetime.date.today():
 			a_date = datetime.date.today()
 			logger.debug('Setting logfile name to actual date')
 			set_file_logger(a_date)
-		parsed_tasks = parse_tasks()
+		parsed_tasks = freelansim_parser.parse()
 		new_tasks = [task for task in parsed_tasks if task['id'] not in parsed_tasks_ids and not db_handler.check_task_id(task['id'])]
 		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
 		for task in new_tasks:
