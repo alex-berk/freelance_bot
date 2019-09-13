@@ -14,6 +14,10 @@ class Parser:
 
 		self.__class__.instances.append(self)
 
+	def __repr__(self):
+		return f"{self.__class__.__name__}({', '.join([key + '=' + repr(value) for key, value in self.__dict__.items()])})"
+
+
 	def parse(self):
 		query_params = {'url': self.url}
 		if self.headers: query_params['headers'] = self.headers
@@ -40,6 +44,10 @@ class Parser:
 			parsed_objcts.append(extracted_fields)
 
 		return parsed_objcts
+
+	@classmethod
+	def parse_all(cls):
+		return [i.parse() for i in cls.instances]
 
 
 class JsonParser(Parser):
@@ -88,7 +96,6 @@ flnsm_params = {
 	'price_format': 'price/type',
 	'tags': 'tags//name',
 	'link': 'href',
-	'test': ''
 }
 
 frlnchnt_params = {
@@ -106,8 +113,6 @@ frlnchnt_params = {
 freelansim = JsonParser(**flnsm_params)
 freelancehunt = Parser(**frlnchnt_params)
 
-for index, task in enumerate(freelansim.parse()):
-	print(index, task)
-
-for index, task in enumerate(freelancehunt.parse()):
-	print(index, task)
+for result in Parser.parse_all():
+	for index, res in enumerate(result):
+		print(index, res)
