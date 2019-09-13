@@ -20,10 +20,10 @@ except sqlite3.OperationalError:
 
 try:
 	cursor.execute('''CREATE TABLE tasks(
-						id integer primary key,
+						link text primary key,
 						title text,
 						tags text,
-						price integer,
+						price text,
 						price_format text
 					)''')
 	conn.commit()
@@ -81,7 +81,7 @@ def add_task(task):
 	with conn:
 		task['inline_tags'] = ';'.join(task['tags'])
 		try:
-			conn.cursor().execute("INSERT INTO tasks VALUES (:id, :title, :inline_tags, :price, :price_format)", task)
+			conn.cursor().execute("INSERT INTO tasks VALUES (:link, :title, :inline_tags, :price, :price_format)", task)
 			conn.commit()
 		except sqlite3.IntegrityError as e:
 			logger.error(e)
@@ -90,20 +90,20 @@ def add_task(task):
 def get_task(search_id):
 	conn = sqlite3.connect('data.db')
 	cursor = conn.cursor()
-	cursor.execute('SELECT * FROM tasks WHERE id=?', (search_id,))
+	cursor.execute('SELECT * FROM tasks WHERE link=?', (search_id,))
 	task = {}
-	task['id'], task['title'], task['tags'], task['price'], task['price_format'] = cursor.fetchone()
+	task['link'], task['title'], task['tags'], task['price'], task['price_format'] = cursor.fetchone()
 	return task
 
-def get_tasks_ids(q=25):
+def get_tasks_links(q=25):
 	conn = sqlite3.connect('data.db')
 	cursor = conn.cursor()
-	cursor.execute('SELECT id FROM tasks ORDER BY id DESC')
+	cursor.execute('SELECT link FROM tasks ORDER BY link DESC')
 	return [i[0] for i in cursor.fetchmany(q)]
 
-def check_task_id(task_id):
-	logger.debug(f'Searching for the task {task_id}')
+def check_task_link(task_link):
+	logger.debug(f'Searching for the task {task_link}')
 	conn = sqlite3.connect('data.db')
 	cursor = conn.cursor()
-	cursor.execute('SELECT id FROM tasks WHERE id=?', (task_id,))
+	cursor.execute('SELECT link FROM tasks WHERE link=?', (task_link,))
 	return bool(cursor.fetchone())

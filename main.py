@@ -53,9 +53,9 @@ def tasks_sender(task_list):
 	for task in task_list[::-1]:
 		search_body = set(parse_string(task['title']) + task['tags'])
 		relevant_users = db_handler.get_relevant_users_ids(search_body)
-		if relevant_users: logger.debug(f"Found task {task['id'], task['tags']} for the users {relevant_users}")
+		if relevant_users: logger.debug(f"Found task {task['link'], task['tags']} for the users {relevant_users}")
 		for user_id in relevant_users:
-			logger.debug(f"Sending task {task['id']}")
+			logger.debug(f"Sending task {task['link']}")
 			tags = ', '.join(task['tags'])
 			price = task['price'] + ' <i>за час</i>' if task['price_format'] == 'per_hour' else task['price']
 			text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
@@ -172,7 +172,7 @@ def bot_listener():
 
 def parser():
 	a_date = datetime.date.today()
-	parsed_tasks_ids = []
+	parsed_tasks_links = []
 
 	flnsm_params = {
 		'url': 'https://freelansim.ru/tasks',
@@ -185,7 +185,6 @@ def parser():
 		'price_format': 'price/type',
 		'tags': 'tags//name',
 		'link': 'href',
-		'id': 'id'
 	}
 	freelansim_parser = JsonParser(**flnsm_params)
 
@@ -195,14 +194,14 @@ def parser():
 			logger.debug('Setting logfile name to actual date')
 			set_file_logger(a_date)
 		parsed_tasks = freelansim_parser.parse()
-		new_tasks = [task for task in parsed_tasks if task['id'] not in parsed_tasks_ids and not db_handler.check_task_id(task['id'])]
-		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
+		new_tasks = [task for task in parsed_tasks if task['link'] not in parsed_tasks_links and not db_handler.check_task_link(task['link'])]
+		logger.debug(f"New tasks {[task['link'] for task in new_tasks]}")
 		for task in new_tasks:
 			print(f"{task['title']}, {task['price']}, {task['price_format']}")
-			logger.debug(f"Sending task {task['id']} to db")
+			logger.debug(f"Sending task {task['link']} to db")
 			db_handler.add_task(task)
 		tasks_sender(new_tasks)
-		parsed_tasks_ids = [task['id'] for task in parsed_tasks]
+		parsed_tasks_links = [task['link'] for task in parsed_tasks]
 		time.sleep(60 * 5)
 
 
