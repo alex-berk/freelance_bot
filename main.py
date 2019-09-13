@@ -7,7 +7,7 @@ import requests
 import json
 import tgbot
 import db_handler
-from parsers import JsonParser
+from parsers import Parser, JsonParser
 
 logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
@@ -51,12 +51,15 @@ def parse_string(string, sep=None):
 
 def tasks_sender(task_list):
 	for task in task_list[::-1]:
-		search_body = set(parse_string(task['title']) + task['tags'])
+		if task['tags']:
+			search_body = set(parse_string(task['title']) + task['tags'])
+		else:
+			search_body = set(parse_string(task['title']))
 		relevant_users = db_handler.get_relevant_users_ids(search_body)
 		if relevant_users: logger.debug(f"Found task {task['link'], task['tags']} for the users {relevant_users}")
 		for user_id in relevant_users:
 			logger.debug(f"Sending task {task['link']}")
-			tags = ', '.join(task['tags'])
+			tags = ', '.join(task['tags']) if task['tags'] else ''
 			price = task['price'] + ' <i>за час</i>' if task['price_format'] == 'per_hour' else task['price']
 			text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
 			bot.send_message(text, link=task['link'], chat_id=user_id, disable_preview=True)
@@ -186,14 +189,31 @@ def parser():
 		'tags': 'tags//name',
 		'link': 'href',
 	}
+	frlnchnt_params = {
+		'url': 'https://freelancehunt.com/projects',
+
+		'containers': '//table[contains(@class, "project-list")]/tbody/tr',
+
+		'title': '/td/a[contains(@class, "visitable")]/text()',
+		'link': '/td/a[contains(@class, "visitable")]/@href',
+		'price': '/td//div[contains(@class, "price")]/text()',
+		# 'currency': '/td//div[contains(@class, "price")]/span/text()',
+		'price_format': '',
+		'tags': ''
+	}
 	freelansim_parser = JsonParser(**flnsm_params)
+	frlnchnt_parser = Parser(**frlnchnt_params)
+
 
 	while True:
 		if a_date != datetime.date.today():
 			a_date = datetime.date.today()
 			logger.debug('Setting logfile name to actual date')
 			set_file_logger(a_date)
-		parsed_tasks = freelansim_parser.parse()
+		
+		parsed_tasks = []
+		for batch in Parser.parse_all():
+			parsed_tasks.extend(batch)
 		new_tasks = [task for task in parsed_tasks if task['link'] not in parsed_tasks_links and not db_handler.check_task_link(task['link'])]
 		logger.debug(f"New tasks {[task['link'] for task in new_tasks]}")
 		for task in new_tasks:

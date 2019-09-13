@@ -79,7 +79,7 @@ def delete_user(user_id):
 def add_task(task):
 	conn = sqlite3.connect('data.db')
 	with conn:
-		task['inline_tags'] = ';'.join(task['tags'])
+		task['inline_tags'] = ';'.join(task['tags']) if task['tags'] else ''
 		try:
 			conn.cursor().execute("INSERT INTO tasks VALUES (:link, :title, :inline_tags, :price, :price_format)", task)
 			conn.commit()
