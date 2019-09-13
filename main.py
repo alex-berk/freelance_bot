@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import os, logging
-import threading
+import concurrent.futures
 import time, datetime
 import requests
 import json
@@ -119,7 +119,7 @@ def bot_listener():
 				setup_keys(message.chat.id)
 		
 		elif bot.verify_command(message.text, 'keywords'):
-			bot.context[message.chat.id] = None
+			bot.context.pop(message.chat.id, None)
 			setup_keys(message.chat.id)
 
 		elif bot.verify_command(message.text, 'stop'):
@@ -127,14 +127,14 @@ def bot_listener():
 			bot.send_message('Вы точно хотите остановить отслеживание?', message.chat.id, keyboard=['Да', 'Нет'])
 
 		elif bot.verify_command(message.text, 'cancel'):
-			bot.context[message.chat.id] = None
+			bot.context.pop(message.chat.id, None)
 			bot.send_message('Действие отменено', message.chat.id)
 		
 	@bot.message_handler(content_types=['text'])
 	def handle_text(message):
 		if message.text.lower() in ['нет', '❌ отмена']:
 			if bot.context[message.chat.id]:
-				bot.context[message.chat.id] = None
+				bot.context.pop(message.chat.id, None)
 				bot.send_message('Действие отменено', message.chat.id)
 			else:
 				bot.send_message('Нечего отменить', message.chat.id)
@@ -172,7 +172,7 @@ def bot_listener():
 			if msg_words == ['готово']:
 				db_handler.update_user_keys(message.chat.id, bot.context[message.chat.id]['working_keys'])
 				confirm_keys_setup(message.chat.id, bot.context[message.chat.id]['working_keys'])
-				bot.context[message.chat.id] = None
+				bot.context.pop(message.chat.id, None)
 			else:
 				for word in msg_words:
 					try:
@@ -184,7 +184,7 @@ def bot_listener():
 		elif bot.verify_context_message(message, 'stop_tacking', 'да'):
 			db_handler.delete_user(message.chat.id)
 			bot.send_message("Отслеживание остановлено. Снова начать отслеживать задачи можно если набрать комманду /start", message.chat.id)
-			bot.context[message.chat.id] = None
+			bot.context.pop(message.chat.id, None)
 		else:
 			logger.debug(f'Got random message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.title if message.chat.title else message.chat.type}, with text "{message.text}"')
 
@@ -217,10 +217,9 @@ def parser():
 if __name__ == '__main__':
 	os.system('cls' if os.name=='nt' else 'clear')
 	logger.debug('Started')
+	
+	with concurrent.futures.ThreadPoolExecutor() as executor:
+		threads = [executor.submit(parser), executor.submit(bot_listener)]
 
-	thread_1 = threading.Thread(target=parser)
-	thread_2 = threading.Thread(target=bot_listener)
-	thread_1.start()
-	thread_2.start()
-	thread_1.join()
-	thread_2.join()
+		for f in cuncurrent.futures.as_completed(threads):
+			f.result()
