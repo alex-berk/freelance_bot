@@ -2,6 +2,9 @@ import requests
 from lxml import html
 import json
 import concurrent.futures
+import logging
+
+logger = logging.getLogger('__main__')
 
 class Parser:
 	instances = []
@@ -22,6 +25,7 @@ class Parser:
 		query_params = {'url': self.url}
 		if self.headers: query_params['headers'] = self.headers
 		try:
+			logger.info(f"Sending request to {self.host}")
 			r = requests.get(**query_params)
 		except (TimeoutError, ConnectionError) as e:
 			return {'error': e}
@@ -41,9 +45,17 @@ class Parser:
 						extracted_fields[field_name] = None
 				else:
 					extracted_fields[field_name] = None
+
+			if extracted_fields.get('link', '')[:4] !='http':
+				extracted_fields['link'] = self.host + extracted_fields['link']
+
 			parsed_objcts.append(extracted_fields)
 
 		return parsed_objcts
+
+	@property
+	def host(self):
+		return '/'.join(self.url.split('/')[:3])
 
 	@classmethod
 	def parse_all(cls):
@@ -60,6 +72,7 @@ class JsonParser(Parser):
 		query_params = {'url': self.url}
 		if self.headers: query_params['headers'] = self.headers
 		try:
+			logger.info(f"Sending request to {self.host}")
 			r = requests.get(**query_params)
 		except (TimeoutError, ConnectionError) as e:
 			return {'error': e}
@@ -77,11 +90,15 @@ class JsonParser(Parser):
 					while extractor:
 						curr_field = curr_field[extractor.pop(0)]
 					if subextractor:
-						extracted_fields[field_name] = [item[subextractor[0]].replace('\u202f', ' ').replace('\u200b', '').strip() for item in curr_field]
+						extracted_fields[field_name] = [item[subextractor[0]] for item in curr_field]
 					else:
-						extracted_fields[field_name] = curr_field.replace('\u202f', ' ').replace('\u200b', '').strip()
+						extracted_fields[field_name] = curr_field
 				except KeyError:
 					extracted_fields[field_name] = None
+
+			if extracted_fields.get('link', '')[:4] !='http':
+				extracted_fields['link'] = self.host + extracted_fields['link']
+
 			parsed_objcts.append(extracted_fields)
 
 		return parsed_objcts
@@ -89,7 +106,7 @@ class JsonParser(Parser):
 if __name__ == '__main__':
 
 	flnsm_params = {
-		'url': 'https://freelansim.ru/tasks?per_page=25&page=1',
+		'url': 'https://freelansim.ru/tasks',
 		'headers': {'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)', 'Accept': 'application/json', 'X-App-Version': '1'},
 
 		'containers': 'tasks',
