@@ -46,7 +46,7 @@ class Parser:
 				else:
 					extracted_fields[field_name] = None
 
-			if extracted_fields.get('link', '')[:4] !='http':
+			if extracted_fields.get('link', 'http')[:4] !='http':
 				extracted_fields['link'] = self.host + extracted_fields['link']
 
 			parsed_objcts.append(extracted_fields)
@@ -96,7 +96,7 @@ class JsonParser(Parser):
 				except KeyError:
 					extracted_fields[field_name] = None
 
-			if extracted_fields.get('link', '')[:4] !='http':
+			if extracted_fields.get('link', 'http')[:4] !='http':
 				extracted_fields['link'] = self.host + extracted_fields['link']
 
 			parsed_objcts.append(extracted_fields)
