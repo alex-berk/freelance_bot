@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 requests = ">=2.20.0"
 telebot = "*"
+lxml = "*"
 
 [requires]
 python_version = "3.7"
