@@ -47,7 +47,9 @@ class Parser:
 
 	@classmethod
 	def parse_all(cls):
-		return [i.parse() for i in cls.instances]
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			results = [executor.submit(inst.parse) for inst in cls.instances]
+			return [f.result() for f in concurrent.futures.as_completed(results)]
 
 
 class JsonParser(Parser):
@@ -84,35 +86,36 @@ class JsonParser(Parser):
 
 		return parsed_objcts
 
+if __name__ == '__main__':
 
-flnsm_params = {
-	'url': 'https://freelansim.ru/tasks?per_page=25&page=1',
-	'headers': {'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)', 'Accept': 'application/json', 'X-App-Version': '1'},
+	flnsm_params = {
+		'url': 'https://freelansim.ru/tasks?per_page=25&page=1',
+		'headers': {'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)', 'Accept': 'application/json', 'X-App-Version': '1'},
 
-	'containers': 'tasks',
+		'containers': 'tasks',
 
-	'title': 'title',
-	'price': 'price/value',
-	'price_format': 'price/type',
-	'tags': 'tags//name',
-	'link': 'href',
-}
+		'title': 'title',
+		'price': 'price/value',
+		'price_format': 'price/type',
+		'tags': 'tags//name',
+		'link': 'href',
+	}
 
-frlnchnt_params = {
-	'url': 'https://freelancehunt.com/projects',
+	frlnchnt_params = {
+		'url': 'https://freelancehunt.com/projects',
 
-	'containers': '//table[contains(@class, "project-list")]/tbody/tr',
+		'containers': '//table[contains(@class, "project-list")]/tbody/tr',
 
-	'title': '/td/a[contains(@class, "visitable")]/text()',
-	'link': '/td/a[contains(@class, "visitable")]/@href',
-	'price': '/td//div[contains(@class, "price")]/text()',
-	'currency': '/td//div[contains(@class, "price")]/span/text()',
-	'tags': ''
-}
+		'title': '/td/a[contains(@class, "visitable")]/text()',
+		'link': '/td/a[contains(@class, "visitable")]/@href',
+		'price': '/td//div[contains(@class, "price")]/text()',
+		'currency': '/td//div[contains(@class, "price")]/span/text()',
+		'tags': ''
+	}
 
-freelansim = JsonParser(**flnsm_params)
-freelancehunt = Parser(**frlnchnt_params)
+	freelansim = JsonParser(**flnsm_params)
+	freelancehunt = Parser(**frlnchnt_params)
 
-for result in Parser.parse_all():
-	for index, res in enumerate(result):
-		print(index, res)
+	for result in Parser.parse_all():
+		for index, res in enumerate(result):
+			print(index, res)
