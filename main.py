@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import os, logging
-from multiprocessing import Process
+import threading
 import time, datetime
 import requests
 import json
@@ -218,9 +218,9 @@ if __name__ == '__main__':
 	os.system('cls' if os.name=='nt' else 'clear')
 	logger.debug('Started')
 
-	process_1 = Process(target=parser)
-	process_2 = Process(target=bot_listener)
-	process_1.start()
-	process_2.start()
-	process_1.join()
-	process_2.join()
+	thread_1 = threading.Thread(target=parser)
+	thread_2 = threading.Thread(target=bot_listener)
+	thread_1.start()
+	thread_2.start()
+	thread_1.join()
+	thread_2.join()
