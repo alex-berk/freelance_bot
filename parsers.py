@@ -1,8 +1,9 @@
 import requests
 from lxml import html
 import json
-import concurrent.futures
 import logging
+import time
+import concurrent.futures
 
 logger = logging.getLogger('__main__')
 
@@ -27,8 +28,10 @@ class Parser:
 		try:
 			logger.info(f"Sending request to {self.host}")
 			r = requests.get(**query_params)
-		except (TimeoutError, ConnectionError) as e:
-			return {'error': e}
+		except (requests.exceptions.ConnectionError) as e:
+			logger.error(e)
+			time.sleep(60)
+			return self.parse()
 
 		tree = html.fromstring(r.text)
 		containers = tree.xpath(self.containers)
@@ -42,9 +45,9 @@ class Parser:
 						extracted_fields[field_name] = objct.xpath('.' + extractor)[0]
 						extracted_fields[field_name] = extracted_fields[field_name].replace('\u202f', ' ').replace('\u200b', '').strip()
 					except IndexError:
-						extracted_fields[field_name] = None
+						extracted_fields[field_name] = ''
 				else:
-					extracted_fields[field_name] = None
+					extracted_fields[field_name] = ''
 
 			if extracted_fields.get('link', 'http')[:4] !='http':
 				extracted_fields['link'] = self.host + extracted_fields['link']
@@ -74,8 +77,10 @@ class JsonParser(Parser):
 		try:
 			logger.info(f"Sending request to {self.host}")
 			r = requests.get(**query_params)
-		except (TimeoutError, ConnectionError) as e:
-			return {'error': e}
+		except (requests.exceptions.TimeoutError) as e:
+			logger.error(e)
+			time.sleep(60)
+			return self.parse()
 
 		containers = json.loads(r.text)[self.containers]
 		parsed_objcts = []
@@ -94,7 +99,7 @@ class JsonParser(Parser):
 					else:
 						extracted_fields[field_name] = curr_field
 				except KeyError:
-					extracted_fields[field_name] = None
+					extracted_fields[field_name] = ''
 
 			if extracted_fields.get('link', 'http')[:4] !='http':
 				extracted_fields['link'] = self.host + extracted_fields['link']
@@ -116,6 +121,7 @@ if __name__ == '__main__':
 		'price_format': 'price/type',
 		'tags': 'tags//name',
 		'link': 'href',
+		'test': ''
 	}
 
 	frlnchnt_params = {
