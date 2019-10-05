@@ -192,7 +192,12 @@ def bot_listener():
 	def test_callback(call):
 		logger.info(f'Got callback_query {call}')
 	
-	bot.polling()
+	try:
+		bot.polling()
+	except Exception as e:
+		logger.error(e)
+		bot.send_message('Polling error')
+		bot.polling()
 
 def parser():
 	a_date = datetime.date.today()
