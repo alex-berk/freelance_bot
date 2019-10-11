@@ -4,9 +4,10 @@ import os, logging
 import concurrent.futures
 import time, datetime
 import requests
-import json
+import json, csv
 import tgbot
 import db_handler
+from parsers import Parser, JsonParser
 
 logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
@@ -50,40 +51,56 @@ def parse_string(string, sep=None):
 
 def tasks_sender(task_list):
 	for task in task_list[::-1]:
-		search_body = set(parse_string(task['title']) + task['tags'])
+		if task['tags']:
+			search_body = set(parse_string(task['title']) + task['tags'])
+		else:
+			search_body = set(parse_string(task['title']))
 		relevant_users = db_handler.get_relevant_users_ids(search_body)
-		if relevant_users: logger.debug(f"Found task {task['id'], task['tags']} for the users {relevant_users}")
+		if relevant_users: logger.debug(f"Found task {task['link'], task['tags']} for the users {relevant_users}")
 		for user_id in relevant_users:
-			logger.debug(f"Sending task {task['id']}")
-			tags = ', '.join(task['tags'])
-			price = task['price'] + ' <i>за час</i>' if task['price_format'] == 'per_hour' else task['price']
+			logger.debug(f"Sending task {task['link']}")
+			tags = ', '.join(task['tags']) if task['tags'] else ''
+			price_usd = '<i>(~ ' + '{:,}'.format(round(task['price_usd'])).replace(',', ' ') + '$)</i>' if task['price_usd'] else ''
+			price = ' '.join([str(task['price']), task['currency'], price_usd])
+			if task['price_format'] == 'per_hour': price += '<i>за час</i>' 
 			text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
-			bot.send_message(text, link=task['url'], chat_id=user_id, disable_preview=True)
+			bot.send_message(text, link=task['link'], chat_id=user_id, disable_preview=True)
 
-def parse_tasks(retry=False):
-	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
-	headers = {	'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)',
-				'Accept': 'application/json',
-				'X-App-Version': '1'}
-	logger.info("Sending request")
-	try:
-		r = requests.get(url, headers=headers)
-		if retry: bot.send_message('Parser is up again')
-	except TimeoutError as e:
-		logger.error(f'Got Timeout error: {e}')
-		parse_tasks()
-	except ConnectionError as e:
-		logger.error(f'Got Connection error: {e}')
-		bot.send_message('Parser is down. Going to try to reconnect in 1 minute.')
-		time.sleep(60)
-		parse_tasks(retry=True)
+def format_task(task):
+	if task.get('tags_s'):
+		task['tags'] = [i.lower().strip() for i in task['tags_s'].split(',')]
+	if task['price'] and task['price'][-1] == '₽':
+		task['price'], task['currency'] = task['price'][:-2], task['price'][-1]
+	if task['currency'] == '₽':
+		task['price_usd'] = int(task['price'].replace(' ', '')) * 0.015
+	elif task['currency'] == '₴':
+		task['price_usd'] = int(task['price'].replace(' ', '')) * 0.04
+	else:
+		task['price_usd'] = ''
+	return task
 
-	tasks = json.loads(r.text)['tasks']
-	return [{'title': task['title'], 'id': task['id'],
-			'price': task['price']['value'], 'price_format': task['price']['type'],
-			'tags': [tag['name'] for tag in task['tags']],
-			'url': 'https://freelansim.ru' + task['href']}
-			for task in tasks]
+def get_gdoc_confing(doc_id, page_id=0):
+	url = f'https://docs.google.com/spreadsheets/d/{doc_id}/export'
+	params = {'format': 'csv', 'gid': page_id}
+
+	r = requests.get(url=url, params=params)
+
+	reader = csv.reader(r.text.split('\r\n'), delimiter=',')
+	table = [row for row in reader][1:]
+
+	keys, values_col = [row[0] for row in table], [row[1:] for row in table]
+	results = [{keys[i]: v[n] for i, v in enumerate(values_col)} for n in range(len(values_col[0]))]
+
+	for index, result in enumerate(results):
+		for field in result:
+			try:
+				results[index][field] = json.loads(results[index][field].replace("\'", "\""))
+			except json.decoder.JSONDecodeError:
+				pass
+	
+	typed_results = [(result.pop('parser_type'), result) for result in results]
+
+	return typed_results
 
 
 def bot_listener():
@@ -192,30 +209,38 @@ def bot_listener():
 	def test_callback(call):
 		logger.info(f'Got callback_query {call}')
 	
-	try:
-		bot.polling()
-	except Exception as e:
-		logger.error(e)
-		bot.send_message('Polling error')
-		bot.polling()
+	bot.polling(none_stop=True)
 
 def parser():
 	a_date = datetime.date.today()
-	parsed_tasks_ids = []
+	parsed_tasks_links = []
+
+	parser_configs = get_gdoc_confing('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM')
+	for parser_type, config in parser_configs:
+		if parser_type == 'Parser' or parser_type == '':
+			Parser(**config)
+		elif parser_type == 'JsonParser':
+			JsonParser(**config)
+
 	while True:
 		if a_date != datetime.date.today():
 			a_date = datetime.date.today()
 			logger.debug('Setting logfile name to actual date')
 			set_file_logger(a_date)
-		parsed_tasks = parse_tasks()
-		new_tasks = [task for task in parsed_tasks if task['id'] not in parsed_tasks_ids and not db_handler.check_task_id(task['id'])]
-		logger.debug(f"New tasks {[task['id'] for task in new_tasks]}")
+		
+		parsed_tasks = []
+		for batch in Parser.parse_all():
+			parsed_tasks.extend(batch)
+		new_tasks = [task for task in parsed_tasks if task['link'] not in parsed_tasks_links and not db_handler.check_task_link(task['link'])]
+		logger.debug(f"New tasks {[task['link'] for task in new_tasks]}")
+
 		for task in new_tasks:
-			print(f"{task['title']}, {task['price']}, {task['price_format']}")
-			logger.debug(f"Sending task {task['id']} to db")
+			task = format_task(task)
+			print(f"{', '.join([task['title'], task['price'], task['currency'], task['price_format']])}")
+			logger.debug(f"Sending task {task['link']} to db")
 			db_handler.add_task(task)
 		tasks_sender(new_tasks)
-		parsed_tasks_ids = [task['id'] for task in parsed_tasks]
+		parsed_tasks_links = [task['link'] for task in parsed_tasks]
 		time.sleep(60 * 5)
 
 
