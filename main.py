@@ -60,9 +60,24 @@ def tasks_sender(task_list):
 		for user_id in relevant_users:
 			logger.debug(f"Sending task {task['link']}")
 			tags = ', '.join(task['tags']) if task['tags'] else ''
-			price = task['price'] + ' <i>за час</i>' if task['price_format'] == 'per_hour' else task['price']
+			price_usd = '<i>(~ ' + '{:,}'.format(round(task['price_usd'])).replace(',', ' ') + '$)</i>' if task['price_usd'] else ''
+			price = ' '.join([str(task['price']), task['currency'], price_usd])
+			if task['price_format'] == 'per_hour': price += '<i>за час</i>' 
 			text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
 			bot.send_message(text, link=task['link'], chat_id=user_id, disable_preview=True)
+
+def format_task(task):
+	if task.get('tags_s'):
+		task['tags'] = task['tags_s'].split(',')
+	if task['price'] and task['price'][-1] == '₽':
+		task['price'], task['currency'] = task['price'][:-2], task['price'][-1]
+	if task['currency'] == '₽':
+		task['price_usd'] = int(task['price'].replace(' ', '')) * 0.015
+	elif task['currency'] == '₴':
+		task['price_usd'] = int(task['price'].replace(' ', '')) * 0.04
+	else:
+		task['price_usd'] = ''
+	return task
 
 
 def bot_listener():
@@ -171,7 +186,7 @@ def bot_listener():
 	def test_callback(call):
 		logger.info(f'Got callback_query {call}')
 	
-	bot.polling()
+	bot.polling(none_stop=True)
 
 def parser():
 	a_date = datetime.date.today()
@@ -188,6 +203,7 @@ def parser():
 		'price_format': 'price/type',
 		'tags': 'tags//name',
 		'link': 'href',
+		'currency': ''
 	}
 	frlnchnt_params = {
 		'url': 'https://freelancehunt.com/projects',
@@ -197,9 +213,10 @@ def parser():
 		'title': '/td/a[contains(@class, "visitable")]/text()',
 		'link': '/td/a[contains(@class, "visitable")]/@href',
 		'price': '/td//div[contains(@class, "price")]/text()',
-		# 'currency': '/td//div[contains(@class, "price")]/span/text()',
+		'currency': '/td//div[contains(@class, "price")]/span/text()',
+		'tags_s': '/td/div/small/text()',
+		'tags': '',
 		'price_format': '',
-		'tags': ''
 	}
 	freelansim_parser = JsonParser(**flnsm_params)
 	frlnchnt_parser = Parser(**frlnchnt_params)
@@ -216,8 +233,10 @@ def parser():
 			parsed_tasks.extend(batch)
 		new_tasks = [task for task in parsed_tasks if task['link'] not in parsed_tasks_links and not db_handler.check_task_link(task['link'])]
 		logger.debug(f"New tasks {[task['link'] for task in new_tasks]}")
+
 		for task in new_tasks:
-			print(f"{task['title']}, {task['price']}, {task['price_format']}")
+			task = format_task(task)
+			print(f"{', '.join([task['title'], task['price'], task['currency'], task['price_format']])}")
 			logger.debug(f"Sending task {task['link']} to db")
 			db_handler.add_task(task)
 		tasks_sender(new_tasks)
