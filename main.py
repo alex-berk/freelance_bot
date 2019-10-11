@@ -68,7 +68,7 @@ def tasks_sender(task_list):
 
 def format_task(task):
 	if task.get('tags_s'):
-		task['tags'] = task['tags_s'].split(',')
+		task['tags'] = [i.lower().strip() for i in task['tags_s'].split(',')]
 	if task['price'] and task['price'][-1] == '₽':
 		task['price'], task['currency'] = task['price'][:-2], task['price'][-1]
 	if task['currency'] == '₽':
