@@ -4,7 +4,7 @@ import os, logging
 from multiprocessing import Process
 import time, datetime
 import requests
-import json
+import json, csv
 import tgbot
 import db_handler
 from parsers import Parser, JsonParser
@@ -78,6 +78,29 @@ def format_task(task):
 	else:
 		task['price_usd'] = ''
 	return task
+
+def get_gdoc_confing(doc_id, page_id=0):
+	url = f'https://docs.google.com/spreadsheets/d/{doc_id}/export'
+	params = {'format': 'csv', 'gid': page_id}
+
+	r = requests.get(url=url, params=params)
+
+	reader = csv.reader(r.text.split('\r\n'), delimiter=',')
+	table = [row for row in reader][1:]
+
+	keys, values_col = [row[0] for row in table], [row[1:] for row in table]
+	results = [{keys[i]: v[n] for i, v in enumerate(values_col)} for n in range(len(values_col[0]))]
+
+	for index, result in enumerate(results):
+		for field in result:
+			try:
+				results[index][field] = json.loads(results[index][field].replace("\'", "\""))
+			except json.decoder.JSONDecodeError:
+				pass
+	
+	typed_results = [(result.pop('parser_type'), result) for result in results]
+
+	return typed_results
 
 
 def bot_listener():
@@ -192,35 +215,12 @@ def parser():
 	a_date = datetime.date.today()
 	parsed_tasks_links = []
 
-	flnsm_params = {
-		'url': 'https://freelansim.ru/tasks',
-		'headers': {'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)', 'Accept': 'application/json', 'X-App-Version': '1'},
-
-		'containers': 'tasks',
-
-		'title': 'title',
-		'price': 'price/value',
-		'price_format': 'price/type',
-		'tags': 'tags//name',
-		'link': 'href',
-		'currency': ''
-	}
-	frlnchnt_params = {
-		'url': 'https://freelancehunt.com/projects',
-
-		'containers': '//table[contains(@class, "project-list")]/tbody/tr',
-
-		'title': '/td/a[contains(@class, "visitable")]/text()',
-		'link': '/td/a[contains(@class, "visitable")]/@href',
-		'price': '/td//div[contains(@class, "price")]/text()',
-		'currency': '/td//div[contains(@class, "price")]/span/text()',
-		'tags_s': '/td/div/small/text()',
-		'tags': '',
-		'price_format': '',
-	}
-	freelansim_parser = JsonParser(**flnsm_params)
-	frlnchnt_parser = Parser(**frlnchnt_params)
-
+	parser_configs = get_gdoc_confing('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM')
+	for parser_type, config in parser_configs:
+		if parser_type == 'Parser' or parser_type == '':
+			Parser(**config)
+		elif parser_type == 'JsonParser':
+			JsonParser(**config)
 
 	while True:
 		if a_date != datetime.date.today():
