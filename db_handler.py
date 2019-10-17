@@ -102,7 +102,6 @@ def get_tasks_links(q=25):
 	return [i[0] for i in cursor.fetchmany(q)]
 
 def check_task_link(task_link):
-	logger.debug(f'Searching for the task {task_link}')
 	conn = sqlite3.connect('data.db')
 	cursor = conn.cursor()
 	cursor.execute('SELECT link FROM tasks WHERE link=?', (task_link,))

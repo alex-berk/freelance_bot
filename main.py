@@ -21,19 +21,21 @@ logger.addHandler(stream_handler)
 bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 
 
-def set_file_logger(date):
-	global logger
-	try:
-		logger.removeHandler(file_handler)
-	except UnboundLocalError:
-		pass
+a_date = datetime.date.today()
+
+def set_file_logger():
+	for handler in logger.handlers:
+		if handler.name == 'file_handler':
+			logger.removeHandler(handler)
+
+	file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
+	formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H-%M-%S')
 
 	if not os.path.exists('logs'): os.mkdir('logs')
-	formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H-%M-%S')
-	file_handler = logging.FileHandler(os.path.join('logs', str(date) + '.log'))
 	file_handler.setFormatter(formatter)
+	file_handler.set_name('file_handler')
 	logger.addHandler(file_handler)
-set_file_logger(datetime.date.today())
+set_file_logger()
 
 def parse_string(string, sep=None):
 	word_list = [i.lower() for i in string.split(sep)]
@@ -212,7 +214,7 @@ def bot_listener():
 	bot.polling(none_stop=True)
 
 def parser():
-	a_date = datetime.date.today()
+	global a_date
 	parsed_tasks_links = []
 
 	parser_configs = get_gdoc_confing('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM')
@@ -226,7 +228,7 @@ def parser():
 		if a_date != datetime.date.today():
 			a_date = datetime.date.today()
 			logger.debug('Setting logfile name to actual date')
-			set_file_logger(a_date)
+			set_file_logger()
 		
 		parsed_tasks = []
 		for batch in Parser.parse_all():
