@@ -24,9 +24,7 @@ bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 a_date = datetime.date.today()
 
 def set_file_logger():
-	for handler in logger.handlers:
-		if handler.name == 'file_handler':
-			logger.removeHandler(handler)
+	logger.handlers = [handler for handler in logger.handlers if handler.name != 'file_handler']
 
 	if not os.path.exists('logs'): os.mkdir('logs')
 	file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
@@ -71,14 +69,19 @@ def tasks_sender(task_list):
 def format_task(task):
 	if task.get('tags_s'):
 		task['tags'] = [i.lower().strip() for i in task['tags_s'].split(',')]
+
 	if task['price'] and task['price'][-1] == '₽':
 		task['price'], task['currency'] = task['price'][:-2], task['price'][-1]
+
+	if task['price'].strip() == '': task['price'] = 'Договорная'
+
 	if task['currency'] == '₽':
 		task['price_usd'] = int(task['price'].replace(' ', '')) * 0.015
 	elif task['currency'] == '₴':
 		task['price_usd'] = int(task['price'].replace(' ', '')) * 0.04
 	else:
 		task['price_usd'] = ''
+
 	return task
 
 def get_gdoc_confing(doc_id, page_id=0):
@@ -227,7 +230,6 @@ def parser():
 	while True:
 		if a_date != datetime.date.today():
 			a_date = datetime.date.today()
-			logger.debug('Setting logfile name to actual date')
 			set_file_logger()
 		
 		parsed_tasks = []
