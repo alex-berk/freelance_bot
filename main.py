@@ -1,6 +1,5 @@
 # coding=utf-8
 
-
 import os, logging
 import concurrent.futures
 import time, datetime
@@ -29,10 +28,10 @@ def set_file_logger():
 		if handler.name == 'file_handler':
 			logger.removeHandler(handler)
 
+	if not os.path.exists('logs'): os.mkdir('logs')
 	file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
 	formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H-%M-%S')
 
-	if not os.path.exists('logs'): os.mkdir('logs')
 	file_handler.setFormatter(formatter)
 	file_handler.set_name('file_handler')
 	logger.addHandler(file_handler)

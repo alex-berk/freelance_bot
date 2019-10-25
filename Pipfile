@@ -6,7 +6,7 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-requests = ">=2.20.0"
+requests = "*"
 telebot = "*"
 lxml = "*"
 
