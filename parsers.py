@@ -30,8 +30,7 @@ class Parser:
 			r = requests.get(**query_params)
 		except (requests.exceptions.ConnectionError) as e:
 			logger.error(e)
-			time.sleep(60)
-			return self.parse()
+			return {}
 
 		tree = html.fromstring(r.text)
 		containers = tree.xpath(self.containers)
@@ -79,8 +78,7 @@ class JsonParser(Parser):
 			r = requests.get(**query_params)
 		except (requests.exceptions.TimeoutError) as e:
 			logger.error(e)
-			time.sleep(60)
-			return self.parse()
+			return {}
 
 		containers = json.loads(r.text)[self.containers]
 		parsed_objcts = []
