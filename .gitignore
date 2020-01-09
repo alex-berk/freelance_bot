@@ -6,3 +6,4 @@ logs
 *.db-journal
 *.sqbpro
 ubuntu@*
+core
