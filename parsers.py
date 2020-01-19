@@ -63,10 +63,7 @@ class Parser:
 	def parse_all(cls):
 		with concurrent.futures.ThreadPoolExecutor() as executor:
 			results = [executor.submit(inst.parse) for inst in cls.instances]
-			all_results = [f.result() for f in concurrent.futures.as_completed(results)]
-			logger.info('Returning all_results')
-			print(all_results)
-			return all_results
+			return [f.result() for f in concurrent.futures.as_completed(results)]
 
 
 class JsonParser(Parser):

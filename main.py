@@ -221,32 +221,20 @@ def parser():
 	parsed_tasks_links = []
 
 	parser_configs = get_gdoc_confing('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM')
-	logger.info('Setting the parsers')
 	for parser_type, config in parser_configs:
 		if parser_type == 'Parser' or parser_type == '':
 			Parser(**config)
 		elif parser_type == 'JsonParser':
 			JsonParser(**config)
-	logger.info('Set the parsers')
 
 	while True:
 		if a_date != datetime.date.today():
 			a_date = datetime.date.today()
-			logger.info('Setting file logger')
 			set_file_logger()
 		
-		logger.info('Setting parsed_tasks to []')
 		parsed_tasks = []
-		all_batches = Parser.parse_all()
-		logger.info('Got all_batches')
-		print(all_batches)
-		for batch in enumerate(all_batches):
-			print(batch)
-		for batch in all_batches:
-			logger.info(batch)
-			logger.info('Extending tasks batch')
+		for batch in Parser.parse_all():
 			parsed_tasks.extend(batch)
-		logger.info('Setting new tasks')
 		new_tasks = [task for task in parsed_tasks if task['link'] not in parsed_tasks_links and not db_handler.check_task_link(task['link'])]
 		logger.debug(f"New tasks {[task['link'] for task in new_tasks]}")
 
