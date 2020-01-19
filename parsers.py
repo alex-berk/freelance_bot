@@ -28,7 +28,6 @@ class Parser:
 		try:
 			logger.info(f"Sending request to {self.host}")
 			r = requests.get(**query_params)
-			logger.info(f"Sent request to {self.host}")
 		except (requests.exceptions.ConnectionError) as e:
 			logger.error(e)
 			return {}
@@ -37,7 +36,6 @@ class Parser:
 		containers = tree.xpath(self.containers)
 
 		parsed_objcts = []
-		logger.info('Got parsed objcts')
 		for objct in containers:
 			extracted_fields = {}
 			for field_name, extractor in self.extractors.items():
@@ -55,7 +53,6 @@ class Parser:
 
 			parsed_objcts.append(extracted_fields)
 
-		logger.info('Returning parsed_objcts')
 		return parsed_objcts
 
 	@property
