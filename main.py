@@ -156,7 +156,7 @@ def bot_listener():
 	def handle_text(message):
 		if message.text.lower() in ['нет', '❌ отмена']:
 			if bot.context.get(message.chat.id, None):
-				bot.context.pop(message.chat.id, None)
+				bot.context.pop(message.chat.id)
 				bot.send_message('Действие отменено', message.chat.id)
 			else:
 				bot.send_message('Нечего отменить', message.chat.id)
@@ -207,6 +207,7 @@ def bot_listener():
 			db_handler.delete_user(message.chat.id)
 			bot.send_message("Отслеживание остановлено. Снова начать отслеживать задачи можно если набрать комманду /start", message.chat.id)
 			bot.context.pop(message.chat.id, None)
+		
 		else:
 			logger.debug(f'Got random message from @{message.from_user.username}, id{message.from_user.id} in chat {message.chat.id}, {message.chat.title if message.chat.title else message.chat.type}, with text "{message.text}"')
 
