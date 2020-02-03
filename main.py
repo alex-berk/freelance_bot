@@ -155,7 +155,7 @@ def bot_listener():
 	@bot.message_handler(content_types=['text'])
 	def handle_text(message):
 		if message.text.lower() in ['нет', '❌ отмена']:
-			if bot.context[message.chat.id]:
+			if bot.context.get(message.chat.id, None):
 				bot.context.pop(message.chat.id, None)
 				bot.send_message('Действие отменено', message.chat.id)
 			else:
