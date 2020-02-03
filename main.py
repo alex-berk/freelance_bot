@@ -255,5 +255,5 @@ if __name__ == '__main__':
 	with concurrent.futures.ThreadPoolExecutor() as executor:
 		threads = [executor.submit(parser), executor.submit(bot_listener)]
 
-		for f in cuncurrent.futures.as_completed(threads):
+		for f in concurrent.futures.as_completed(threads):
 			f.result()
