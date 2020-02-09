@@ -1,22 +1,26 @@
 import os, logging
 import datetime
 import requests, json
-from telebot import TeleBot
 import db_handler
 
 logger = logging.getLogger('__main__')
 
 
-class BotNotifier(TeleBot):
+class BotNotifier():
 	
 	context = {}
 	handlers = {}
 
 	
 	def __init__(self, token, admin_chat_id):
-		super().__init__(token)
+		self.token = token
 		self.admin_chat_id = admin_chat_id
-		self.username = self.get_me().username
+		self.username = self.get_me()["username"]
+
+	def get_me(self):
+		r = requests.get(f'https://api.telegram.org/bot{self.token}/getMe')
+		resp = json.loads(r.text)["result"]
+		return resp
 
 	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False, keyboard=[]):
 		logger.debug(f"Sending message to {chat_id}")

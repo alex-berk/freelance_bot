@@ -8,7 +8,6 @@ verify_ssl = true
 [packages]
 requests = "*"
 lxml = "*"
-pytelegrambotapi = "*"
 
 [requires]
 python_version = "3.8"
