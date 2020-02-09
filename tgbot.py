@@ -10,6 +10,7 @@ logger = logging.getLogger('__main__')
 class BotNotifier(TeleBot):
 	
 	context = {}
+	handlers = {}
 
 	
 	def __init__(self, token, admin_chat_id):
@@ -70,14 +71,37 @@ class BotNotifier(TeleBot):
 
 	def verify_context_message(self, message, step_name=None, message_text=None):
 		if step_name:
-			step_result = self.context.get(message.chat.id, {'name': None})['name'] == step_name
+			step_result = self.context.get(message["chat"]["id"], {'name': None})['name'] == step_name
 		else:
 			step_result = True
 		if message_text:
-			message_result = message.text.lower() == message_text
+			message_result = message["text"].lower() == message_text
 		else:
 			message_result = True
 		return step_result and message_result
+
+
+	def message_handler(self, handler_func):
+		self.handlers['message_handler'] = handler_func 
+
+	def commands_handler(self, handler_func):
+		self.handlers['commands_handler'] = handler_func
+
+	def polling(self, update_id=None):
+		url = f'https://api.telegram.org/bot{self.token}/getUpdates'
+		params = {'timeout': 60}
+		if update_id:
+			params['offset'] = update_id + 1
+		r = requests.post(url, params=params)
+		if json.loads(r.text)['result']:
+			resp = json.loads(r.text)['result'].pop()
+			if resp['message']['text'][0] == '/':
+				self.handlers['commands_handler'](resp['message'])
+			else:
+				self.handlers['message_handler'](resp['message'])
+			self.polling(resp['update_id'])
+		else:
+			self.polling(update_id)
 
 	@staticmethod
 	def generate_keyboard(buttons, row_len=2):
