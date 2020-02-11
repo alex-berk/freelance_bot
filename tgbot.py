@@ -96,7 +96,9 @@ class BotNotifier():
 		params = {'timeout': 60}
 		if update_id:
 			params['offset'] = update_id + 1
+		logger.debug('Sending request to the Telegram server')
 		r = requests.post(url, params=params)
+		logger.debug('Got response from the Telegram server')
 		if json.loads(r.text)['result']:
 			resp = json.loads(r.text)['result'].pop()
 			if resp['message']['text'][0] == '/':

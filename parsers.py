@@ -28,6 +28,7 @@ class Parser:
 		try:
 			logger.info(f"Sending request to {self.host}")
 			r = requests.get(**query_params)
+			logger.debug(f"Got response from {self.host}")
 		except (requests.exceptions.ConnectionError) as e:
 			logger.error(e)
 			return {}
@@ -53,6 +54,7 @@ class Parser:
 
 			parsed_objcts.append(extracted_fields)
 
+		logger.debug(f'Parsed {self.host}')
 		return parsed_objcts
 
 	@property
@@ -76,6 +78,7 @@ class JsonParser(Parser):
 		try:
 			logger.info(f"Sending request to {self.host}")
 			r = requests.get(**query_params)
+			logger.debug(f"Got response from {self.host}")
 		except (requests.exceptions.TimeoutError) as e:
 			logger.error(e)
 			return {}
@@ -104,6 +107,7 @@ class JsonParser(Parser):
 
 			parsed_objcts.append(extracted_fields)
 
+		logger.debug(f'Parsed {self.host}')
 		return parsed_objcts
 
 if __name__ == '__main__':

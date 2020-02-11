@@ -1,4 +1,4 @@
-# coding=utf-8
+ #coding=utf-8
 
 import os, logging
 import concurrent.futures
@@ -126,8 +126,7 @@ def confirm_keys_setup(chat_id, s_keys):
 
 @bot.commands_handler
 def handle_commands(message):
-	print('Command handler running')
-	# logger.debug(f'Got message from @{message["from_user"]["username"]}, id{message["from_user"]["id"]} in chat {message["chat"]["id"]}, {message["chat"]["title"] if message["chat"]["title"] else message["chat"]["type"]}, with text "{message["text"]}"')
+	logger.debug(f'Got message from @{message["from"]["username"]}, id{message["from"]["id"]}{" in chat " + str(message["chat"]["id"]) if message["chat"]["type"] == "group" else ""}, {message["chat"]["title"] if message["chat"]["type"] == "group" else message["chat"]["type"]}, with text "{message["text"]}"')
 	if bot.verify_command(message["text"], 'status'):
 		status_text = 'Up and running!'
 		if bot.context.get(message["chat"]["id"], {'name': None})['name']: status_text += '\nCurrent setup step: ' + bot.context[message["chat"]["id"]]['name']
@@ -153,7 +152,6 @@ def handle_commands(message):
 	
 @bot.message_handler
 def handle_text(message):
-	print('Message handler running')
 	if message["text"].lower() in ['нет', '❌ отмена']:
 		if bot.context.get(message["chat"]["id"], None):
 			bot.context.pop(message["chat"]["id"])
@@ -209,7 +207,7 @@ def handle_text(message):
 		bot.context.pop(message["chat"]["id"], None)
 	
 	else:
-		# logger.debug(f'Got random message from @{message["from_user"]["username"]}, id{message["from_user"]["id"]} in chat {message["chat"]["id"]}, {message["chat"]["title"] if message["chat"]["title"] else message["chat"]["type"]}, with text "{message["text"]}"')
+		logger.debug(f'Got random message from @{message["from"]["username"]}, id{message["from"]["id"]}{" in chat " + str(message["chat"]["id"]) if message["chat"]["type"] == "group" else ""}, {message["chat"]["title"] if message["chat"]["type"] == "group" else message["chat"]["type"]}, with text "{message["text"]}"')
 		bot.send_message('Не понимаю эту команду', message["chat"]["id"])
 
 
