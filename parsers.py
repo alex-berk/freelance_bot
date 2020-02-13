@@ -29,9 +29,9 @@ class Parser:
 			logger.info(f"Sending request to {self.host}")
 			r = requests.get(**query_params)
 			logger.debug(f"Got response from {self.host}")
-		except (requests.exceptions.ConnectionError) as e:
+		except Exception as e:
 			logger.error(e)
-			return {}
+			raise e
 
 		tree = html.fromstring(r.text)
 		containers = tree.xpath(self.containers)
@@ -79,9 +79,9 @@ class JsonParser(Parser):
 			logger.info(f"Sending request to {self.host}")
 			r = requests.get(**query_params)
 			logger.debug(f"Got response from {self.host}")
-		except (requests.exceptions.TimeoutError) as e:
+		except Exception as e:
 			logger.error(e)
-			return {}
+			raise e
 
 		containers = json.loads(r.text)[self.containers]
 		parsed_objcts = []
