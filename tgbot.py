@@ -8,14 +8,12 @@ logger = logging.getLogger('__main__')
 
 class BotNotifier():
 	
-	context = {}
-	handlers = {}
-
-	
 	def __init__(self, token, admin_chat_id):
 		self.token = token
 		self.admin_chat_id = admin_chat_id
 		self.username = self.get_me()["username"]
+		self.context = {}
+		self.handlers = {}
 
 	def get_me(self):
 		r = requests.get(f'https://api.telegram.org/bot{self.token}/getMe')
@@ -69,6 +67,7 @@ class BotNotifier():
 			r = requests.post(f'https://api.telegram.org/bot{self.token}/sendSticker', params=params)
 		except Exception as e:
 			logger.error(e)
+			raise e
 
 	def verify_command(self, text, command):
 		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
