@@ -88,7 +88,12 @@ def get_gdoc_confing(doc_id, page_id=0):
 	url = f'https://docs.google.com/spreadsheets/d/{doc_id}/export'
 	params = {'format': 'csv', 'gid': page_id}
 
-	r = requests.get(url=url, params=params)
+	try:
+		r = requests.get(url=url, params=params, timeout=120)
+	except requests.exceptions.ReadTimeout:
+		logger.error('Timeout Error')
+		time.sleep(60)
+		get_gdoc_confing(doc_id, page_id)
 
 	reader = csv.reader(r.text.split('\r\n'), delimiter=',')
 	table = [row for row in reader][1:]
@@ -211,7 +216,6 @@ def handle_text(message):
 		bot.send_message('Не понимаю эту команду', message["chat"]["id"])
 
 
-	
 def bot_listener():
 	bot.polling()
 

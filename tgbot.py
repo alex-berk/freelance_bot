@@ -16,7 +16,11 @@ class BotNotifier():
 		self.handlers = {}
 
 	def get_me(self):
-		r = requests.get(f'https://api.telegram.org/bot{self.token}/getMe')
+		try:
+			r = requests.get(f'https://api.telegram.org/bot{self.token}/getMe', timeout=60)
+		except requests.exceptions.ReadTimeout:
+			logger.error('Timeout Error')
+			self.get_me()
 		resp = json.loads(r.text)["result"]
 		return resp
 
@@ -52,7 +56,11 @@ class BotNotifier():
 		params = {'chat_id': chat_id, 'text': message, 'parse_mode':'html', 'disable_web_page_preview': disable_preview, 'force_reply': force_reply}
 		params['reply_markup'] = json.dumps(reply_markup)
 		
-		r = requests.post(f'https://api.telegram.org/bot{self.token}/sendMessage', params=params)
+		try:
+			r = requests.post(f'https://api.telegram.org/bot{self.token}/sendMessage', params=params, timeout=60)
+		except requests.exceptions.ReadTimeout:
+			logger.error('Timeout Error')
+			self.send_message(message, chat_id, link, callback, disable_preview, force_reply, keyboard)
 		if not json.loads(r.text)['ok']:
 			if json.loads(r.text)["error_code"] == 403:
 				logger.warning(f"Bot was kicked from the chat {chat_id}. Deleting chat from db.")
@@ -61,13 +69,13 @@ class BotNotifier():
 				logger.error(f"Message not been sent!, Got response: {r.text}; {chat_id}; {link}; {disable_preview}")
 
 	def send_sticker(self, sticker_id, chat_id=None):
+		if not chat_id: chat_id = self.admin_chat_id
+		params = {'chat_id': chat_id, 'sticker': sticker_id}
 		try:
-			if not chat_id: chat_id = self.admin_chat_id
-			params = {'chat_id': chat_id, 'sticker': sticker_id}
-			r = requests.post(f'https://api.telegram.org/bot{self.token}/sendSticker', params=params)
-		except Exception as e:
-			logger.error(e)
-			raise e
+			r = requests.post(f'https://api.telegram.org/bot{self.token}/sendSticker', params=params, timeout=60)
+		except requests.exceptions.ReadTimeout:
+			logger.error('Timeout Error')
+			self.send_sticker(sticker_id, chat_id)
 
 	def verify_command(self, text, command):
 		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
@@ -95,8 +103,12 @@ class BotNotifier():
 		params = {'timeout': 60}
 		if update_id:
 			params['offset'] = update_id + 1
-		logger.debug('Sending request to the Telegram server')
-		r = requests.post(url, params=params)
+		try:
+			logger.debug('Sending request to the Telegram server')
+			r = requests.post(url, params=params, timeout=100)
+		except requests.exceptions.ReadTimeout:
+			logger.error('Timeout Error')
+			self.polling(update_id)
 		logger.debug('Got response from the Telegram server')
 		if json.loads(r.text)['result']:
 			resp = json.loads(r.text)['result'].pop()

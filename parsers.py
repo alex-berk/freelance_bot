@@ -25,13 +25,12 @@ class Parser:
 	def parse(self):
 		query_params = {'url': self.url}
 		if self.headers: query_params['headers'] = self.headers
+		logger.info(f"Sending request to {self.host}")
 		try:
-			logger.info(f"Sending request to {self.host}")
-			r = requests.get(**query_params)
-			logger.debug(f"Got response from {self.host}")
-		except Exception as e:
-			logger.error(e)
-			raise e
+			r = requests.get(**query_params, timeout=60)
+		except requests.exceptions.ReadTimeout:
+			logger.error(f'Timeout Error from {self.host}')
+			return {}
 
 		tree = html.fromstring(r.text)
 		containers = tree.xpath(self.containers)
@@ -75,13 +74,12 @@ class JsonParser(Parser):
 	def parse(self):
 		query_params = {'url': self.url}
 		if self.headers: query_params['headers'] = self.headers
+		logger.info(f"Sending request to {self.host}")
 		try:
-			logger.info(f"Sending request to {self.host}")
-			r = requests.get(**query_params)
-			logger.debug(f"Got response from {self.host}")
-		except Exception as e:
-			logger.error(e)
-			raise e
+			r = requests.get(**query_params, timeout=60)
+		except requests.exceptions.ReadTimeout:
+			logger.error(f'Timeout Error from {self.host}')
+			return {}
 
 		containers = json.loads(r.text)[self.containers]
 		parsed_objcts = []
