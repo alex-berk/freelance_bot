@@ -11,18 +11,20 @@ class BotNotifier():
 	def __init__(self, token, admin_chat_id):
 		self.token = token
 		self.admin_chat_id = admin_chat_id
-		self.username = self.get_me()["username"]
+		self.username = self.call_tg_api('getMe')["result"]["username"]
 		self.context = {}
 		self.handlers = {}
 
-	def get_me(self):
+
+	def call_tg_api(self, method, params={}, timeout=60):
+		url = f'https://api.telegram.org/bot{self.token}/{method}'
 		try:
-			r = requests.get(f'https://api.telegram.org/bot{self.token}/getMe', timeout=60)
+			r = requests.post(url, params=params, timeout=timeout)
 		except requests.exceptions.ReadTimeout:
-			logger.error('Timeout Error')
-			self.get_me()
-		resp = json.loads(r.text)["result"]
-		return resp
+			logger.debug('Timeout')
+			self.call_tg_api(method, params, timeout)
+		response = json.loads(r.text)
+		return response
 
 	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False, keyboard=[]):
 		logger.debug(f"Sending message to {chat_id}")
@@ -56,26 +58,18 @@ class BotNotifier():
 		params = {'chat_id': chat_id, 'text': message, 'parse_mode':'html', 'disable_web_page_preview': disable_preview, 'force_reply': force_reply}
 		params['reply_markup'] = json.dumps(reply_markup)
 		
-		try:
-			r = requests.post(f'https://api.telegram.org/bot{self.token}/sendMessage', params=params, timeout=60)
-		except requests.exceptions.ReadTimeout:
-			logger.error('Timeout Error')
-			self.send_message(message, chat_id, link, callback, disable_preview, force_reply, keyboard)
-		if not json.loads(r.text)['ok']:
-			if json.loads(r.text)["error_code"] == 403:
+		tg_response = self.call_tg_api('sendMessage', params)
+		if not tg_response['ok']:
+			if tg_response["error_code"] == 403:
 				logger.warning(f"Bot was kicked from the chat {chat_id}. Deleting chat from db.")
 				db_handler.delete_user(chat_id)
 			else:
-				logger.error(f"Message not been sent!, Got response: {r.text}; {chat_id}; {link}; {disable_preview}")
+				logger.error(f"Message not been sent!, Got response: {tg_response}; {chat_id}; {link}; {disable_preview}")
 
 	def send_sticker(self, sticker_id, chat_id=None):
 		if not chat_id: chat_id = self.admin_chat_id
 		params = {'chat_id': chat_id, 'sticker': sticker_id}
-		try:
-			r = requests.post(f'https://api.telegram.org/bot{self.token}/sendSticker', params=params, timeout=60)
-		except requests.exceptions.ReadTimeout:
-			logger.error('Timeout Error')
-			self.send_sticker(sticker_id, chat_id)
+		self.call_tg_api('sendSticker', params)
 
 	def verify_command(self, text, command):
 		return text == '/' + command or text == ''.join(['/', command, '@', self.username])
@@ -103,15 +97,11 @@ class BotNotifier():
 		params = {'timeout': 60}
 		if update_id:
 			params['offset'] = update_id + 1
-		try:
-			logger.debug('Sending request to the Telegram server')
-			r = requests.post(url, params=params, timeout=100)
-		except requests.exceptions.ReadTimeout:
-			logger.error('Timeout Error')
-			self.polling(update_id)
+		logger.debug('Sending request to the Telegram server')
+		tg_response = self.call_tg_api('getUpdates', params, timeout=100)
 		logger.debug('Got response from the Telegram server')
-		if json.loads(r.text)['result']:
-			resp = json.loads(r.text)['result'].pop()
+		if tg_response['result']:
+			resp = tg_response['result'].pop()
 			if resp['message']['text'][0] == '/':
 				self.handlers['commands_handler'](resp['message'])
 			else:
