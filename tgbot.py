@@ -93,7 +93,6 @@ class BotNotifier():
 		self.handlers['commands_handler'] = handler_func
 
 	def polling(self, update_id=None):
-		url = f'https://api.telegram.org/bot{self.token}/getUpdates'
 		params = {'timeout': 60}
 		if update_id:
 			params['offset'] = update_id + 1
