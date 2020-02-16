@@ -22,7 +22,7 @@ class Parser:
 		return f"{self.__class__.__name__}({', '.join([key + '=' + repr(value) for key, value in self.__dict__.items()])})"
 
 
-	def parse(self):
+	def get(self):
 		query_params = {'url': self.url}
 		if self.headers: query_params['headers'] = self.headers
 		logger.info(f"Sending request to {self.host}")
@@ -31,8 +31,10 @@ class Parser:
 		except requests.exceptions.ReadTimeout:
 			logger.error(f'Timeout Error from {self.host}')
 			return {}
+		return r.text
 
-		tree = html.fromstring(r.text)
+	def parse(self):
+		tree = html.fromstring(self.get())
 		containers = tree.xpath(self.containers)
 
 		parsed_objcts = []
@@ -72,16 +74,7 @@ class JsonParser(Parser):
 		super().__init__(url, containers, headers, **extractors)
 
 	def parse(self):
-		query_params = {'url': self.url}
-		if self.headers: query_params['headers'] = self.headers
-		logger.info(f"Sending request to {self.host}")
-		try:
-			r = requests.get(**query_params, timeout=60)
-		except requests.exceptions.ReadTimeout:
-			logger.error(f'Timeout Error from {self.host}')
-			return {}
-
-		containers = json.loads(r.text)[self.containers]
+		containers = json.loads(self.get())[self.containers]
 		parsed_objcts = []
 		for objct in containers:
 			extracted_fields = {}
