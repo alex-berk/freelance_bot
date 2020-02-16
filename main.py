@@ -1,6 +1,7 @@
  #coding=utf-8
 
 import os, logging
+import argparse
 import concurrent.futures
 import time, datetime
 import requests
@@ -17,6 +18,12 @@ stream_handler.setLevel(logging.INFO)
 stream_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', '%H:%M:%S'))
 
 logger.addHandler(stream_handler)
+
+
+argparser = argparse.ArgumentParser(description='You can specify whether you want to run only parser or bot part of the script')
+argparser.add_argument('--p', help='Name of the part you want to run (bot or parser)')
+args = argparser.parse_args()
+
 
 bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
 
@@ -255,8 +262,13 @@ if __name__ == '__main__':
 	os.system('cls' if os.name=='nt' else 'clear')
 	logger.debug('Started')
 	
-	with concurrent.futures.ThreadPoolExecutor() as executor:
-		threads = [executor.submit(parser), executor.submit(bot_listener)]
+	if args.p == 'parser':
+		parser()
+	elif args.p == 'bot':
+		bot_listener()
+	else:
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			threads = [executor.submit(parser), executor.submit(bot_listener)]
 
-		for f in concurrent.futures.as_completed(threads):
-			f.result()
+			for f in concurrent.futures.as_completed(threads):
+				f.result()
