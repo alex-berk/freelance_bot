@@ -21,7 +21,7 @@ logger.addHandler(stream_handler)
 
 
 argparser = argparse.ArgumentParser(description='You can specify whether you want to run only parser or bot part of the script')
-argparser.add_argument('--p', help='Name of the part you want to run (bot or parser)')
+argparser.add_argument('part', nargs="*", default=['both'], help='Name of the part you want to run (bot or parser)')
 args = argparser.parse_args()
 
 
@@ -262,9 +262,10 @@ if __name__ == '__main__':
 	os.system('cls' if os.name=='nt' else 'clear')
 	logger.debug('Started')
 	
-	if args.p == 'parser':
+	inline_argument = args.part.pop()
+	if inline_argument == 'parser':
 		parser()
-	elif args.p == 'bot':
+	elif inline_argument == 'bot':
 		bot_listener()
 	else:
 		with concurrent.futures.ThreadPoolExecutor() as executor:
