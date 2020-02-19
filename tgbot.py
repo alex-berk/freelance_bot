@@ -1,7 +1,6 @@
 import os, logging
 import datetime
 import requests, json
-import db_handler
 
 logger = logging.getLogger('__main__')
 
@@ -61,10 +60,11 @@ class BotNotifier():
 		tg_response = self.call_tg_api('sendMessage', params)
 		if not tg_response['ok']:
 			if tg_response["error_code"] == 403:
-				logger.warning(f"Bot was kicked from the chat {chat_id}. Deleting chat from db.")
-				db_handler.delete_user(chat_id)
+				return 403
 			else:
 				logger.error(f"Message not been sent!, Got response: {tg_response}; {chat_id}; {link}; {disable_preview}")
+		else:
+			return 200
 
 	def send_sticker(self, sticker_id, chat_id=None):
 		if not chat_id: chat_id = self.admin_chat_id
