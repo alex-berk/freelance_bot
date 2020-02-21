@@ -233,12 +233,7 @@ def parser():
 	global a_date
 	parsed_tasks_links = []
 
-	parser_configs = get_gdoc_confing('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM')
-	for parser_type, config in parser_configs:
-		if parser_type == 'Parser' or parser_type == '':
-			Parser(**config)
-		elif parser_type == 'JsonParser':
-			JsonParser(**config)
+	Parser.get_gdoc_config('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM')
 
 	while True:
 		if a_date != datetime.date.today():

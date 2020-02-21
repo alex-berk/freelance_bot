@@ -1,6 +1,6 @@
 import requests
 from lxml import html
-import json
+import json, csv
 import logging
 import time
 import concurrent.futures
@@ -42,10 +42,11 @@ class Parser:
 			extracted_fields = {}
 			for field_name, extractor in self.extractors.items():
 				if extractor:
-					try:
-						extracted_fields[field_name] = objct.xpath('.' + extractor)[0]
-						extracted_fields[field_name] = extracted_fields[field_name].replace('\u202f', ' ').replace('\u200b', '').strip()
-					except IndexError:
+					extracted_fields[field_name] = objct.xpath('.' + extractor)
+					extracted_fields[field_name] = [obj.replace('\u202f', ' ').replace('\u200b', '').strip() for obj in extracted_fields[field_name]]
+					if len(extracted_fields[field_name]) == 1:
+						extracted_fields[field_name] = extracted_fields[field_name].pop()
+					elif len(extracted_fields[field_name]) == 0:
 						extracted_fields[field_name] = ''
 				else:
 					extracted_fields[field_name] = ''
@@ -67,6 +68,41 @@ class Parser:
 		with concurrent.futures.ThreadPoolExecutor() as executor:
 			results = [executor.submit(inst.parse) for inst in cls.instances]
 			return [f.result() for f in concurrent.futures.as_completed(results)]
+
+	@staticmethod
+	def get_gdoc_config(doc_id, page_id=0):
+		url = f'https://docs.google.com/spreadsheets/d/{doc_id}/export'
+		params = {'format': 'csv', 'gid': page_id}
+
+		try:
+			r = requests.get(url=url, params=params, timeout=120)
+		except requests.exceptions.ReadTimeout:
+			logger.error('Timeout Error')
+			time.sleep(60)
+			get_gdoc_confing(doc_id, page_id)
+
+		reader = csv.reader(r.text.split('\r\n'), delimiter=',')
+		table = [row for row in reader][1:]
+
+		keys, values_col = [row[0] for row in table], [row[1:] for row in table]
+		results = [{keys[i]: v[n] for i, v in enumerate(values_col)} for n in range(len(values_col[0]))]
+
+		for index, result in enumerate(results):
+			for field in result:
+				try:
+					results[index][field] = json.loads(results[index][field].replace("\'", "\""))
+				except json.decoder.JSONDecodeError:
+					pass
+		
+		typed_results = [(result.pop('parser_type'), result) for result in results]
+
+		for parser_type, config in typed_results:
+			if parser_type == 'Parser' or parser_type == '':
+				Parser(**config)
+			elif parser_type == 'JsonParser':
+				JsonParser(**config)
+
+		return typed_results
 
 
 class JsonParser(Parser):
@@ -103,34 +139,37 @@ class JsonParser(Parser):
 
 if __name__ == '__main__':
 
-	flnsm_params = {
-		'url': 'https://freelansim.ru/tasks',
-		'headers': {'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)', 'Accept': 'application/json', 'X-App-Version': '1'},
+	print(Parser.get_gdoc_config('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM'))
 
-		'containers': 'tasks',
 
-		'title': 'title',
-		'price': 'price/value',
-		'price_format': 'price/type',
-		'tags': 'tags//name',
-		'link': 'href',
-		'test': ''
-	}
+	# flnsm_params = {
+	# 	'url': 'https://freelansim.ru/tasks',
+	# 	'headers': {'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)', 'Accept': 'application/json', 'X-App-Version': '1'},
 
-	frlnchnt_params = {
-		'url': 'https://freelancehunt.com/projects',
+	# 	'containers': 'tasks',
 
-		'containers': '//table[contains(@class, "project-list")]/tbody/tr',
+	# 	'title': 'title',
+	# 	'price': 'price/value',
+	# 	'price_format': 'price/type',
+	# 	'tags': 'tags//name',
+	# 	'link': 'href',
+	# 	'test': ''
+	# }
 
-		'title': '/td/a[contains(@class, "visitable")]/text()',
-		'link': '/td/a[contains(@class, "visitable")]/@href',
-		'price': '/td//div[contains(@class, "price")]/text()',
-		'currency': '/td//div[contains(@class, "price")]/span/text()',
-		'tags': ''
-	}
+	# frlnchnt_params = {
+	# 	'url': 'https://freelancehunt.com/projects',
 
-	freelansim = JsonParser(**flnsm_params)
-	freelancehunt = Parser(**frlnchnt_params)
+	# 	'containers': '//table[contains(@class, "project-list")]/tbody/tr',
+
+	# 	'title': '/td/a[contains(@class, "visitable")]/text()',
+	# 	'link': '/td/a[contains(@class, "visitable")]/@href',
+	# 	'price': '/td//div[contains(@class, "price")]/text()',
+	# 	'currency': '/td//div[contains(@class, "price")]/span/text()',
+	# 	'tags': ''
+	# }
+
+	# freelansim = JsonParser(**flnsm_params)
+	# freelancehunt = Parser(**frlnchnt_params)
 
 	for result in Parser.parse_all():
 		for index, res in enumerate(result):
