@@ -9,6 +9,7 @@ import json, csv
 import tgbot
 import db_handler
 from parsers import Parser, JsonParser
+import log_parser
 
 logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
@@ -25,7 +26,7 @@ argparser.add_argument('part', nargs="*", default=['both'], help='Name of the pa
 args = argparser.parse_args()
 
 
-bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], os.environ['CHAT_ID'])
+bot = tgbot.BotNotifier(os.environ['BOT_TOKEN'], int(os.environ['CHAT_ID']))
 
 
 a_date = datetime.date.today()
@@ -119,8 +120,17 @@ def handle_commands(message):
 	logger.debug(f'Got message from @{message["from"]["username"]}, id{message["from"]["id"]}{" in chat " + str(message["chat"]["id"]) if message["chat"]["type"] == "group" else ""}, {message["chat"]["title"] if message["chat"]["type"] == "group" else message["chat"]["type"]}, with text "{message["text"]}"')
 	if bot.verify_command(message["text"], 'status'):
 		status_text = 'Up and running!'
-		if bot.context.get(message["chat"]["id"], {'name': None})['name']: status_text += '\nCurrent setup step: ' + bot.context[message["chat"]["id"]]['name']
-		bot.send_message(status_text, message["chat"]["id"])
+		if message["chat"]["id"] == bot.admin_chat_id:
+			c_log = log_parser.get_current_log()
+			ltg = log_parser.search_last_telegram_response(c_log)
+			lp = log_parser.get_last_parsing(c_log)
+			lp_s = ''.join([f'{k}: {v}\n' for (k, v) in lp])
+			nt = log_parser.get_new_tasks_q(c_log)
+			nt_s = '\n'.join([f'{k}: {v}' for (k, v) in nt.items()])
+			status_text = f"\n<b>Last Telegram Response:</b>{ltg}\n\n<b>Last Parsing:</b>\n{lp_s}\n<b>Found Tasks Today:</b>\n{nt_s}\n"
+		if bot.context.get(message["chat"]["id"], {'name': None})['name']:
+			status_text += '\n<b>Current setup step:</b> ' + bot.context[message["chat"]["id"]]['name']
+		bot.send_message(status_text, message["chat"]["id"], disable_preview=True)
 	
 	elif bot.verify_command(message["text"], 'start'):
 		if db_handler.get_user_skeys(message["chat"]["id"]):
