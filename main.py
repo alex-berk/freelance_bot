@@ -73,12 +73,15 @@ def tasks_sender(task_list):
 			text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
 			resp = bot.send_message(text, link=task['link'], chat_id=user_id, disable_preview=True)
 			if resp in [400, 403]:
-				logger.warning(f"Bot was kicked from the chat {chat_id}. Deleting chat from db.")
-				db_handler.delete_user(chat_id)
+				logger.warning(f"Bot was kicked from the chat {user_id}. Deleting chat from db.")
+				db_handler.delete_user(user_id)
 
 def format_task(task):
 	if task.get('tags_s'):
 		task['tags'] = [i.lower().strip() for i in task['tags_s'].split(',')]
+
+	if type(task['tags']) is not list:
+		task['tags'] = [task['tags']]
 
 	if task['price'] and task['price'][-1] == '₽':
 		task['price'], task['currency'] = task['price'][:-2], task['price'][-1]
@@ -93,34 +96,6 @@ def format_task(task):
 		task['price_usd'] = ''
 
 	return task
-
-def get_gdoc_confing(doc_id, page_id=0):
-	url = f'https://docs.google.com/spreadsheets/d/{doc_id}/export'
-	params = {'format': 'csv', 'gid': page_id}
-
-	try:
-		r = requests.get(url=url, params=params, timeout=120)
-	except requests.exceptions.ReadTimeout:
-		logger.error('Timeout Error')
-		time.sleep(60)
-		get_gdoc_confing(doc_id, page_id)
-
-	reader = csv.reader(r.text.split('\r\n'), delimiter=',')
-	table = [row for row in reader][1:]
-
-	keys, values_col = [row[0] for row in table], [row[1:] for row in table]
-	results = [{keys[i]: v[n] for i, v in enumerate(values_col)} for n in range(len(values_col[0]))]
-
-	for index, result in enumerate(results):
-		for field in result:
-			try:
-				results[index][field] = json.loads(results[index][field].replace("\'", "\""))
-			except json.decoder.JSONDecodeError:
-				pass
-	
-	typed_results = [(result.pop('parser_type'), result) for result in results]
-
-	return typed_results
 
 
 def setup_keys(chat_id):
