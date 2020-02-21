@@ -59,10 +59,8 @@ class BotNotifier():
 		
 		tg_response = self.call_tg_api('sendMessage', params)
 		if not tg_response['ok']:
-			if tg_response["error_code"] == 403:
-				return 403
-			else:
-				logger.error(f"Message not been sent!, Got response: {tg_response}; {chat_id}; {link}; {disable_preview}")
+			logger.error(f"Message not been sent!, Got response: {tg_response}; {chat_id}; {link}; {disable_preview}")
+			return tg_response["error_code"]
 		else:
 			return 200
 

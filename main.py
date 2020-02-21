@@ -72,7 +72,7 @@ def tasks_sender(task_list):
 			if task['price_format'] == 'per_hour': price += '<i>за час</i>' 
 			text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
 			resp = bot.send_message(text, link=task['link'], chat_id=user_id, disable_preview=True)
-			if resp == 403:
+			if resp in [400, 403]:
 				logger.warning(f"Bot was kicked from the chat {chat_id}. Deleting chat from db.")
 				db_handler.delete_user(chat_id)
 
