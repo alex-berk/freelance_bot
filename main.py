@@ -9,7 +9,8 @@ import json, csv
 import tgbot
 import db_handler
 from parsers import Parser, JsonParser
-import log_parser
+from dashboard import log_parser
+from dashboard import app
 
 logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
@@ -242,7 +243,6 @@ def parser():
 
 
 if __name__ == '__main__':
-	os.system('cls' if os.name=='nt' else 'clear')
 	logger.debug('Started')
 	
 	inline_argument = args.part.pop()
@@ -250,9 +250,11 @@ if __name__ == '__main__':
 		parser()
 	elif inline_argument == 'bot':
 		bot_listener()
+	elif inline_argument == 'dashboard':
+		app.run(debug=True)
 	else:
 		with concurrent.futures.ThreadPoolExecutor() as executor:
-			threads = [executor.submit(parser), executor.submit(bot_listener)]
+			threads = [executor.submit(parser), executor.submit(bot_listener), executor.submit(app.run)]
 
 			for f in concurrent.futures.as_completed(threads):
 				f.result()

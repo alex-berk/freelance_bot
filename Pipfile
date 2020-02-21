@@ -8,6 +8,10 @@ verify_ssl = true
 [packages]
 requests = "*"
 lxml = "*"
+flask = "*"
+flask-login = "*"
+flask-bcrypt = "*"
+flask-sqlalchemy = "*"
 
 [requires]
 python_version = "3.8"
