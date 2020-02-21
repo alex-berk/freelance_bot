@@ -69,7 +69,7 @@ def tasks_sender(task_list):
 			tags = ', '.join(task['tags']) if task['tags'] else ''
 			price_usd = '<i>(~ ' + '{:,}'.format(round(task['price_usd'])).replace(',', ' ') + '$)</i>' if task['price_usd'] else ''
 			price = ' '.join([str(task['price']), task['currency'], price_usd])
-			if task['price_format'] == 'per_hour': price += '<i>за час</i>' 
+			if task['price_format'] == 'per_hour': price += ' <i>за час</i>' 
 			text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
 			resp = bot.send_message(text, link=task['link'], chat_id=user_id, disable_preview=True)
 			if resp in [400, 403]:
