@@ -64,7 +64,6 @@ def get_sent_messages(log):
 	return users
 
 if __name__ == '__main__':
-	os.chdir('../.')
 	cl = get_current_log()
 
 	lp = get_last_parsing(cl)

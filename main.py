@@ -9,7 +9,7 @@ import json, csv
 import tgbot
 import db_handler
 from parsers import Parser, JsonParser
-from dashboard import log_parser
+import log_parser
 from dashboard import app
 
 logger = logging.getLogger('__main__')
