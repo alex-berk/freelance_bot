@@ -20,7 +20,12 @@ def home():
 	nt = log_parser.get_new_tasks_q(cl)
 	st = log_parser.get_sent_tasks_q(cl)
 
-	return render_template('home.html', title='Parsing Stats', lt=lt, lp=lp, nt=nt, st=st)
+	try:
+		proc_sent = [st[hostname] / nt[hostname] * 100 for hostname in st]
+	except ZeroDivisionError:
+		proc_sent = 0
+
+	return render_template('home.html', title='Parsing Stats', lt=lt, lp=lp, nt=nt, st=st, proc_sent=proc_sent)
 
 @app.route('/users')
 def users():

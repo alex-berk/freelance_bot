@@ -18,7 +18,6 @@
         <tr>
           <td>{{ hostname }}</td>
           <td>{{ nt[hostname] }}</td>
-          {% set proc_sent = st[hostname]/nt[hostname]*100 %}
           <td>{{ st[hostname] }} ({{ '%0.2f' % proc_sent|float }} %)</td>
           <td>{{ time }}</td>
         </tr>
