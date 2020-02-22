@@ -2,7 +2,6 @@
 {% block content %}
 <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
      <h1 class="display-4">Stats</h1>
-     <h2>{{ lt }}</h2>
    </div>
    <div class="container">
      <table class="table">
@@ -11,20 +10,21 @@
            <th>Host</th>
            <th>Parsed, today</th>
            <th>Sent, today</th>
+           <th>Last parsing</th>
          </tr>
        </thead>
        <tbody>
-         <tr>
-           <th>test 1</th>
-           <th>150</th>
-           <th>15</th>
-         </tr>
-         <tr>
-           <th>test 1</th>
-           <th>150</th>
-           <th>15</th>
-         </tr>
+        {% for hostname, time in lp %}
+        <tr>
+          <th>{{ hostname }}</th>
+          <th>{{ nt[hostname] }}</th>
+          {% set proc_sent = st[hostname]/nt[hostname]*100 %}
+          <th>{{ st[hostname] }} ({{ '%0.2f' % proc_sent|float }} %)</th>
+          <th>{{ time }}</th>
+        </tr>
+        {% endfor %}
        </tbody>
      </table>
+     <p>Last Telegram response: {{ lt }}</p>
    </div>
 {% endblock content %}

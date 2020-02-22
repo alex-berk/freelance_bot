@@ -123,7 +123,7 @@ def handle_commands(message):
 		status_text = 'Up and running!'
 		if message["chat"]["id"] == bot.admin_chat_id:
 			c_log = log_parser.get_current_log()
-			ltg = log_parser.search_last_telegram_response(c_log)
+			ltg = log_parser.get_last_telegram_response(c_log)
 			lp = log_parser.get_last_parsing(c_log)
 			lp_s = ''.join([f'{k}: {v}\n' for (k, v) in lp])
 			nt = log_parser.get_new_tasks_q(c_log)

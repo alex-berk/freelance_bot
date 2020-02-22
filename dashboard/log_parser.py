@@ -16,7 +16,7 @@ def get_current_log():
 
 	return log
 
-def search_last_telegram_response(log):
+def get_last_telegram_response(log):
 	for line in log[::-1]:
 		if line.event == 'Got response from the Telegram server':
 			return(line.time)
@@ -33,7 +33,7 @@ def get_last_parsing(log):
 	for host in get_all_hosts(log):
 		for line in log[::-1]:
 			if line.event == 'Parsed ' + host:
-				hosts_time.append((host, line.time))
+				hosts_time.append((host[8:], line.time))
 				break
 	return hosts_time
 
@@ -62,3 +62,16 @@ def get_sent_messages(log):
 	users_ids_flatten = [item for sublist in users_ids for item in sublist]
 	users.update(users_ids_flatten)
 	return users
+
+if __name__ == '__main__':
+	os.chdir('../.')
+	cl = get_current_log()
+
+	lp = get_last_parsing(cl)
+	nt = get_new_tasks_q(cl)
+	st = get_sent_tasks_q(cl)
+	sm = get_sent_messages(cl)
+	print(lp)
+	print(nt)
+	print(st)
+	print(sm)
