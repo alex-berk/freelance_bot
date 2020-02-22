@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 import log_parser
+import db_handler
 
 
 app = Flask(__name__)
@@ -21,8 +22,11 @@ def home():
 	nt = log_parser.get_new_tasks_q(cl)
 	st = log_parser.get_sent_tasks_q(cl)
 
-	return render_template('home.html', lt=lt, lp=lp, nt=nt, st=st)
+	return render_template('home.html', title='Parsing Stats', lt=lt, lp=lp, nt=nt, st=st)
 
-@app.route('/login')
-def login():
-	return render_template('login.html')
+@app.route('/users')
+def users():
+	cl = log_parser.get_current_log()
+	sm = log_parser.get_sent_messages(cl)
+	users = db_handler.get_users()
+	return render_template('users.html', title='Users stats', sm=sm, users=users)

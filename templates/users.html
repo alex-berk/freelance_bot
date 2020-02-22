@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+     <h1 class="display-4">Users stats</h1>
+   </div>
+   <div class="container">
+     <table class="table">
+       <thead>
+         <tr>
+           <th>Chat id</th>
+           <th>Keywords</th>
+           <th>Messages Sent, today</th>
+         </tr>
+       </thead>
+       <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.chat_id }}</td>
+          <td>{{ ', '.join(user.keywords[1:-1]) }}</td>
+          <td>{{ sm[user.chat_id] }}</td>
+        </tr>
+        {% endfor %}
+       </tbody>
+     </table>
+   </div>
+{% endblock content %}

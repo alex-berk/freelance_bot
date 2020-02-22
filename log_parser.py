@@ -73,4 +73,4 @@ if __name__ == '__main__':
 	print(lp)
 	print(nt)
 	print(st)
-	print(sm)
+	print(sm['87794324'])
