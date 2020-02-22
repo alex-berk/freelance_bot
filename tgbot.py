@@ -15,13 +15,13 @@ class BotNotifier():
 		self.handlers = {}
 
 
-	def call_tg_api(self, method, params={}, timeout=60):
+	def call_tg_api(self, method, data={}, timeout=60):
 		url = f'https://api.telegram.org/bot{self.token}/{method}'
 		try:
-			r = requests.post(url, params=params, timeout=timeout)
+			r = requests.post(url, data=data, timeout=timeout)
 		except requests.exceptions.ReadTimeout:
 			logger.debug('Timeout')
-			self.call_tg_api(method, params, timeout)
+			self.call_tg_api(method, data, timeout)
 		response = json.loads(r.text)
 		return response
 
