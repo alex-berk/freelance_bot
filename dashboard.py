@@ -21,7 +21,7 @@ def home():
 	st = log_parser.get_sent_tasks_q(cl)
 
 	try:
-		proc_sent = [st[hostname] / nt[hostname] * 100 for hostname in st]
+		proc_sent = {hostname: st[hostname] / nt[hostname] * 100 for hostname in st}
 	except ZeroDivisionError:
 		proc_sent = 0
 
