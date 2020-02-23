@@ -20,10 +20,7 @@ def home():
 	nt = log_parser.get_new_tasks_q(cl)
 	st = log_parser.get_sent_tasks_q(cl)
 
-	try:
-		proc_sent = {hostname: st[hostname] / nt[hostname] * 100 for hostname in st}
-	except ZeroDivisionError:
-		proc_sent = 0
+	proc_sent = {hostname: st.get(hostname, 0) / nt[hostname] * 100 if nt[hostname] != 0 else 0 for hostname in nt}
 
 	return render_template('home.html', title='Parsing Stats', lt=lt, lp=lp, nt=nt, st=st, proc_sent=proc_sent)
 
