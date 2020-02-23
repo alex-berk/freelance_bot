@@ -69,8 +69,6 @@ if __name__ == '__main__':
 	lp = get_last_parsing(cl)
 	nt = get_new_tasks_q(cl)
 	st = get_sent_tasks_q(cl)
-	sm = get_sent_messages(cl)
 	print(lp)
 	print(nt)
 	print(st)
-	print(sm['87794324'])
