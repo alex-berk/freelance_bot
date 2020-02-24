@@ -19,7 +19,7 @@
         <tr>
           <td>{{ hostname }}</td>
           <td>{{ nt[hostname] }}</td>
-          <td>{{ st.get(hostname) }} ({{ '%0.2f' % proc_sent.get(hostname)|float }} %)</td>
+          <td>{{ st.get(hostname, 0) }} ({{ '%0.2f' % proc_sent.get(hostname)|float }} %)</td>
           <td>{{ time }}</td>
         </tr>
         {% endfor %}
