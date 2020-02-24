@@ -122,11 +122,10 @@ def handle_commands(message):
 	if bot.verify_command(message["text"], 'status'):
 		status_text = 'Up and running!'
 		if message["chat"]["id"] == bot.admin_chat_id:
-			c_log = log_parser.get_current_log()
-			ltg = log_parser.get_last_telegram_response(c_log)
-			lp = log_parser.get_last_parsing(c_log)
+			ltg = log_parser.get_last_telegram_response()
+			lp = log_parser.get_last_parsing()
 			lp_s = ''.join([f'{k}: {v}\n' for (k, v) in lp])
-			nt = log_parser.get_new_tasks_q(c_log)
+			nt = log_parser.get_new_tasks_q()
 			nt_s = '\n'.join([f'{k}: {v}' for (k, v) in nt.items()])
 			status_text = f"\n<b>Last Telegram Response:</b>{ltg}\n\n<b>Last Parsing:</b>\n{lp_s}\n<b>Found Tasks Today:</b>\n{nt_s}\n"
 		if bot.context.get(message["chat"]["id"], {'name': None})['name']:

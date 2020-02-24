@@ -16,19 +16,25 @@ def get_current_log():
 
 	return log
 
-def get_last_telegram_response(log):
+def get_last_telegram_response(log=None):
+	if not log:
+		log = get_current_log()
 	for line in log[::-1]:
 		if line.event == 'Got response from the Telegram server':
 			return(line.time)
 
-def get_all_hosts(log):
+def get_all_hosts(log=None):
+	if not log:
+		log = get_current_log()
 	hosts = set()
 	for line in log:
 		if line.event[:23] == 'Sending request to http':
 			hosts.add(line.event[19:])
 	return hosts
 
-def get_last_parsing(log):
+def get_last_parsing(log=None):
+	if not log:
+		log = get_current_log()
 	hosts_time = []
 	for host in get_all_hosts(log):
 		for line in log[::-1]:
@@ -37,7 +43,9 @@ def get_last_parsing(log):
 				break
 	return hosts_time
 
-def get_new_tasks_q(log):
+def get_new_tasks_q(log=None):
+	if not log:
+		log = get_current_log()
 	new_tasks = []
 	new_task_lines = [line.event[10:] for line in log if line.event[:9] == 'New tasks' and line.event != 'New tasks []']
 	for line in new_task_lines:
@@ -47,14 +55,18 @@ def get_new_tasks_q(log):
 		hosts[task.split('/')[2]] += 1
 	return hosts
 
-def get_sent_tasks_q(log):
+def get_sent_tasks_q(log=None):
+	if not log:
+		log = get_current_log()
 	sent_tasks = []
 	sent_task_lines = [line.event.split('\'')[1] for line in log if line.event[:10] == 'Found task']
 	tasks = Counter()
 	tasks.update([line.split('/')[2] for line in sent_task_lines])
 	return tasks
 
-def get_sent_messages(log):
+def get_sent_messages(log=None):
+	if not log:
+		log = get_current_log()
 	users = Counter()
 	sent_tasks = []
 	sent_task_lines = [line.event.split('for the users ')[1] for line in log if line.event[:10] == 'Found task']
@@ -64,11 +76,9 @@ def get_sent_messages(log):
 	return users
 
 if __name__ == '__main__':
-	cl = get_current_log()
-
-	lp = get_last_parsing(cl)
-	nt = get_new_tasks_q(cl)
-	st = get_sent_tasks_q(cl)
+	lp = get_last_parsing()
+	nt = get_new_tasks_q()
+	st = get_sent_tasks_q()
 	print(lp)
 	print(nt)
 	print(st)

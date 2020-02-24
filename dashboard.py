@@ -14,11 +14,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 
 @app.route('/')
 def home():
-	cl = log_parser.get_current_log()
-	lt = log_parser.get_last_telegram_response(cl)
-	lp = log_parser.get_last_parsing(cl)
-	nt = log_parser.get_new_tasks_q(cl)
-	st = log_parser.get_sent_tasks_q(cl)
+	lt = log_parser.get_last_telegram_response()
+	lp = log_parser.get_last_parsing()
+	nt = log_parser.get_new_tasks_q()
+	st = log_parser.get_sent_tasks_q()
 
 	proc_sent = {hostname: st.get(hostname, 0) / nt[hostname] * 100 if nt[hostname] != 0 else 0 for hostname in nt}
 
@@ -26,7 +25,6 @@ def home():
 
 @app.route('/users')
 def users():
-	cl = log_parser.get_current_log()
-	sm = log_parser.get_sent_messages(cl)
+	sm = log_parser.get_sent_messages()
 	users = db_handler.get_users()
 	return render_template('users.html', title='Users stats', sm=sm, users=users)
