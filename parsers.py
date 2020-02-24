@@ -109,9 +109,11 @@ class JsonParser(Parser):
 		super().__init__(url, containers, headers, **extractors)
 
 	def parse(self):
-		containers = json.loads(self.get())[self.containers]
+		content = json.loads(self.get())
+		for curr_selector in self.containers.split('//'):
+			content = content[curr_selector]
 		parsed_objcts = []
-		for objct in containers:
+		for objct in content:
 			extracted_fields = {}
 			for field_name, extractor in self.extractors.items():
 				extractor, *subextractor = extractor.split('//')
@@ -138,37 +140,54 @@ class JsonParser(Parser):
 
 if __name__ == '__main__':
 
-	print(Parser.get_gdoc_config('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM'))
+	# print(Parser.get_gdoc_config('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM'))
 
 
-	# flnsm_params = {
-	# 	'url': 'https://freelansim.ru/tasks',
-	# 	'headers': {'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)', 'Accept': 'application/json', 'X-App-Version': '1'},
+	flnsm_params = {
+		'url': 'https://freelansim.ru/tasks',
+		'headers': {'User-Agent':'Telegram Freelance bot (@freelancenotify_bot)', 'Accept': 'application/json', 'X-App-Version': '1'},
 
-	# 	'containers': 'tasks',
+		'containers': 'tasks',
 
-	# 	'title': 'title',
-	# 	'price': 'price/value',
-	# 	'price_format': 'price/type',
-	# 	'tags': 'tags//name',
-	# 	'link': 'href',
-	# 	'test': ''
-	# }
+		'title': 'title',
+		'price': 'price/value',
+		'price_format': 'price/type',
+		'tags': 'tags//name',
+		'link': 'href',
+		'test': ''
+	}
 
-	# frlnchnt_params = {
-	# 	'url': 'https://freelancehunt.com/projects',
+	frlnchnt_params = {
+		'url': 'https://freelancehunt.com/projects',
 
-	# 	'containers': '//table[contains(@class, "project-list")]/tbody/tr',
+		'containers': '//table[contains(@class, "project-list")]/tbody/tr',
 
-	# 	'title': '/td/a[contains(@class, "visitable")]/text()',
-	# 	'link': '/td/a[contains(@class, "visitable")]/@href',
-	# 	'price': '/td//div[contains(@class, "price")]/text()',
-	# 	'currency': '/td//div[contains(@class, "price")]/span/text()',
-	# 	'tags': ''
-	# }
+		'title': '/td/a[contains(@class, "visitable")]/text()',
+		'link': '/td/a[contains(@class, "visitable")]/@href',
+		'price': '/td//div[contains(@class, "price")]/text()',
+		'currency': '/td//div[contains(@class, "price")]/span/text()',
+		'tags': ''
+	}
 
-	# freelansim = JsonParser(**flnsm_params)
+	guru_params = {
+		'url': 'https://www.guru.com/api/search/job/',
+		'headers': {'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmlxdWVfbmFtZSI6IjM5NjY3MTUiLCJVVFkiOiJJIiwicm9sZSI6WyIyIiwiMTAxIl0sIlNJRCI6IjI5ODY0MzciLCJUSUQiOiIyMTIyOTA1IiwiSUFMIjoiRmFsc2UiLCJPSUQiOiIzOTY2NzE1IiwiaXNzIjoiaHR0cHM6Ly9hdXRoLmd1cnUuY29tLyIsImF1ZCI6Imh0dHBzOi8vd3d3Lmd1cnUuY29tL2FwaSIsImV4cCI6MTU4MjU3MjMxMywibmJmIjoxNTgyNTY4NzEzfQ.JDsX8vi23FJaK_xDDQIeo_ptnsxqOK3EJ5KwngQbEaA'},
+
+		'containers': 'Data//Results',
+
+		'title': 'Title',
+		'project_id': 'ProjectID',
+		'tags': 'Skills',
+		'price': 'BudgetAmountShortDescription'
+	}
+
+	freelansim = JsonParser(**flnsm_params)
 	# freelancehunt = Parser(**frlnchnt_params)
+	guru = JsonParser(**guru_params)
+
+
+	for index, instance in enumerate(JsonParser.instances):
+		print(index, instance)
 
 	for result in Parser.parse_all():
 		for index, res in enumerate(result):
