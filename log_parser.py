@@ -16,6 +16,20 @@ def get_current_log():
 
 	return log
 
+def get_logs_for_period(q=7, s=1):
+	logs = os.listdir('logs')
+	current_week_log = sorted(os.listdir('logs'), reverse=True)[s:s+q]
+
+	logs = []
+	for log_name in current_week_log:
+		with open('logs/' + log_name, 'r') as log_file:
+			log_lines = log_file.readlines()
+			log = [line[:-1].split(':',3) for line in log_lines]
+			log = [event(time=log_name[:-4]+';'+line[0], module=line[1], level=line[2], event=line[3]) for line in log]
+			logs.extend(log)
+	return logs
+
+
 def get_last_telegram_response(log=None):
 	if not log:
 		log = get_current_log()
@@ -55,6 +69,15 @@ def get_new_tasks_q(log=None):
 		hosts[task.split('/')[2]] += 1
 	return hosts
 
+def get_new_tasks_q_wdays(log=None):
+	if not log:
+		log = get_logs_for_period()
+	new_tasks = []
+	new_task_lines = [line.time.split(';')[0] for line in log if line.event.startswith('Sending task') and line.event.endswith('to db')]
+	hosts = Counter()
+	hosts.update(new_task_lines)
+	return hosts
+
 def get_sent_tasks_q(log=None):
 	if not log:
 		log = get_current_log()
@@ -62,6 +85,15 @@ def get_sent_tasks_q(log=None):
 	sent_task_lines = [line.event.split('\'')[1] for line in log if line.event[:10] == 'Found task']
 	tasks = Counter()
 	tasks.update([line.split('/')[2] for line in sent_task_lines])
+	return tasks
+
+def get_sent_tasks_q_wdays(log=None):
+	if not log:
+		log = get_logs_for_period()
+	sent_tasks = []
+	sent_task_lines = [line.time.split(';')[0] for line in log if line.event.startswith('Found task')]
+	tasks = Counter()
+	tasks.update([line for line in sent_task_lines])
 	return tasks
 
 def get_sent_messages(log=None):
@@ -77,8 +109,12 @@ def get_sent_messages(log=None):
 
 if __name__ == '__main__':
 	lp = get_last_parsing()
-	nt = get_new_tasks_q()
-	st = get_sent_tasks_q()
-	print(lp)
-	print(nt)
-	print(st)
+	nt = get_new_tasks_q(get_logs_for_period())
+	st = get_sent_tasks_q(get_logs_for_period())
+	# print(lp)
+	# print(nt)
+	# print(st)
+
+	print(sorted(get_new_tasks_q_wdays().items()))
+	# (l1, l2) = sorted(get_sent_tasks_q_wdays().items())
+	print([i[0] for i in sorted(get_sent_tasks_q_wdays().items())])

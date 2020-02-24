@@ -19,9 +19,13 @@ def home():
 	nt = log_parser.get_new_tasks_q()
 	st = log_parser.get_sent_tasks_q()
 
+	legend_days = [i[0] for i in sorted(log_parser.get_new_tasks_q_wdays().items())]
+	wnt = [i[1] for i in sorted(log_parser.get_new_tasks_q_wdays().items())]
+	wst = [i[1] for i in sorted(log_parser.get_sent_tasks_q_wdays().items())]
+
 	proc_sent = {hostname: st.get(hostname, 0) / nt[hostname] * 100 if nt[hostname] != 0 else 0 for hostname in nt}
 
-	return render_template('home.html', title='Parsing Stats', lt=lt, lp=lp, nt=nt, st=st, proc_sent=proc_sent)
+	return render_template('home.html', title='Parsing Stats', lt=lt, lp=lp, nt=nt, st=st, proc_sent=proc_sent, wnt=wnt, wst=wst, legend_days=legend_days)
 
 @app.route('/users')
 def users():

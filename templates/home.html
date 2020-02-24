@@ -27,5 +27,41 @@
      </table>
     </div>
      <p>Last Telegram response: {{ lt }}</p>
+     <canvas id="myChart" width="400" height="120"></canvas>
    </div>
 {% endblock content %}
+{% block chart %}
+<script>
+var ctx = document.getElementById('myChart').getContext('2d');
+var myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [{% for day in legend_days %} '{{day}}', {% endfor %}],
+        datasets: [{
+            label: 'Parsed',
+            data: {{ wnt }},
+            borderWidth: 0
+        },
+        {
+            label: 'Sent',
+            data: {{ wst }},
+            borderWidth: 0
+        },
+        ]
+    },
+    options: {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                }
+            }]
+        },
+        tooltips: {
+            mode: 'index',
+            intersect: false,
+          },
+    }
+});
+</script>
+{% endblock chart %}
