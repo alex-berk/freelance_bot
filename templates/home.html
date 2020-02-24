@@ -40,12 +40,16 @@ var myChart = new Chart(ctx, {
         datasets: [{
             label: 'Parsed',
             data: {{ wnt }},
-            borderWidth: 0
+            borderWidth: 0,
+            backgroundColor: [
+                'rgba(255, 40, 0, 0.3)']
         },
         {
             label: 'Sent',
             data: {{ wst }},
-            borderWidth: 0
+            borderWidth: 0,
+            backgroundColor: [
+                'rgba(40, 0, 255, 0.3)']
         },
         ]
     },
