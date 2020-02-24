@@ -35,6 +35,8 @@ class Parser:
 
 	def parse(self):
 		tree = html.fromstring(self.get())
+		tree.make_links_absolute(base_url=self.host)
+		
 		containers = tree.xpath(self.containers)
 
 		parsed_objcts = []
@@ -50,9 +52,6 @@ class Parser:
 						extracted_fields[field_name] = ''
 				else:
 					extracted_fields[field_name] = ''
-
-			if extracted_fields.get('link', 'http')[:4] !='http':
-				extracted_fields['link'] = self.host + extracted_fields['link']
 
 			parsed_objcts.append(extracted_fields)
 
