@@ -33,33 +33,62 @@
 {% block chart %}
 <script>
 var ctx = document.getElementById('myChart').getContext('2d');
+var lineChartData = {
+  labels: [{% for day in legend_days %} '{{day}}', {% endfor %}],
+  datasets: [{
+      label: 'Parsed',
+      data: {{ wnt }},
+      yAxisID: 'axis-1',
+      borderWidth: 0,
+      backgroundColor: [
+          'rgba(255, 40, 0, 0.3)']
+  },
+  {
+      label: 'Sent',
+      data: {{ wst }},
+      yAxisID: 'axis-1',
+      borderWidth: 0,
+      backgroundColor: [
+          'rgba(40, 0, 255, 0.3)']
+  },
+  {
+      label: 'Proc Sent',
+      fill: false,
+      data: {{ proc_sent_graph }},
+      yAxisID: 'axis-2',
+      borderWidth: 0,
+      borderColor:[
+          'rgb(80, 0, 0)'],
+  },
+  ]
+}
 var myChart = new Chart(ctx, {
     type: 'line',
-    data: {
-        labels: [{% for day in legend_days %} '{{day}}', {% endfor %}],
-        datasets: [{
-            label: 'Parsed',
-            data: {{ wnt }},
-            borderWidth: 0,
-            backgroundColor: [
-                'rgba(255, 40, 0, 0.3)']
-        },
-        {
-            label: 'Sent',
-            data: {{ wst }},
-            borderWidth: 0,
-            backgroundColor: [
-                'rgba(40, 0, 255, 0.3)']
-        },
-        ]
-    },
+    data: lineChartData,
     options: {
         scales: {
             yAxes: [{
+                id: 'axis-1',
+                position: 'left',
+                display: true,
                 ticks: {
                     beginAtZero: true
                 }
-            }]
+            },
+            {
+                type: 'linear',
+                id: 'axis-2',
+                position: 'right',
+                display: true,
+                ticks: {
+                    beginAtZero: true,
+                    // suggestedMax: 100,
+                },
+                gridLines: {
+                    drawOnChartArea: false,
+                  },
+            },
+            ]
         },
         tooltips: {
             mode: 'index',
