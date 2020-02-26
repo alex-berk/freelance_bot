@@ -9,9 +9,7 @@ verify_ssl = true
 requests = "*"
 lxml = "*"
 flask = "*"
-flask-login = "*"
-flask-bcrypt = "*"
-flask-sqlalchemy = "*"
+flask-wtf = "*"
 
 [requires]
 python_version = "3.8"
