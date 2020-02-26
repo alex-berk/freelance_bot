@@ -7,3 +7,7 @@ tr:hover td{
 	cursor: pointer;
 	background-color: #e8e8e8;
 }
+table tr.totals td {
+	font-weight: bold;
+	border-top: 3px solid #dee2e6;
+}
