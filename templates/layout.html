@@ -24,9 +24,20 @@
        <a class="p-2 text-dark" href="{{ url_for('home') }}">Parsing stats</a>
        <a class="p-2 text-dark" href="{{ url_for('users') }}">Users</a>
      </nav>
-     <a class="btn btn-outline-primary" href="#">Sign up</a>
+     <a class="btn btn-outline-danger" href="{{ url_for('login') }}">Logout</a>
    </div>
+   <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+     {% if messages %}
+       {% for category, message in messages %}
+         <div class="alert alert-{{ category }}">
+           {{ message }}
+         </div>
+       {% endfor %}
+     {% endif %}
+    {% endwith %}
     {% block content %}{% endblock %}
+    </div>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
