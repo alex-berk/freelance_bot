@@ -5,7 +5,7 @@
    </div>
    <div class="container">
     <div class="table-responsive">
-     <table class="table">
+     <table class="table table-interactive">
        <thead>
          <tr>
            <th>Host</th>
@@ -36,7 +36,7 @@
      <canvas id="myChart" width="400" height="120"></canvas>
    </div>
 {% endblock content %}
-{% block chart %}
+{% block js %}
 <script>
 var ctx = document.getElementById('myChart').getContext('2d');
 var lineChartData = {
@@ -103,7 +103,7 @@ var myChart = new Chart(ctx, {
     }
 });
 
-$('td').click(function(){
+$('table.table-interactive td').click(function(){
     var filter = $(this).parent('tr').find('td:first').text()
     $.ajax({
         type: "POST",
@@ -123,4 +123,4 @@ $('td').click(function(){
     });
 });
 </script>
-{% endblock chart %}
+{% endblock js %}

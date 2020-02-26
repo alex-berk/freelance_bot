@@ -16,7 +16,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 def home():
 	if request.method == 'POST':
 		site_filter = request.json.get('site_filter')
-		print(f"site_filter={site_filter}")
 		if site_filter == 'Total':
 			site_filter = None
 		ntdy = log_parser.get_new_tasks_q_wdays(site=site_filter)
@@ -47,8 +46,13 @@ def home():
 
 	return render_template('home.html', title='Parsing Stats', lt=lt, lp=lp, nt=nt, st=st, proc_sent=proc_sent, wnt=wnt, wst=wst, legend_days=legend_days, proc_sent_graph=proc_sent_graph, snt=snt, sst=sst)
 
-@app.route('/users')
+@app.route('/users', methods=['GET', 'POST'])
 def users():
+	if request.method == 'POST':
+		user_id = request.json.get('user_id')
+		stl = log_parser.get_sent_tasks_list(user_id=user_id)
+		return jsonify(stl)
+
 	sm = log_parser.get_sent_messages()
 	users = db_handler.get_users()
 	return render_template('users.html', title='Users stats', sm=sm, users=users)

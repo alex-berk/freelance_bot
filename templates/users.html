@@ -5,7 +5,7 @@
    </div>
    <div class="container">
     <div class="table-responsive">
-     <table class="table">
+     <table class="table table-interactive">
        <thead>
          <tr>
            <th>Chat id</th>
@@ -24,5 +24,38 @@
        </tbody>
      </table>
     </div>
+    <div class="table-responsive" id="tasks-list"></div>
    </div>
 {% endblock content %}
+{% block js %}
+<script>
+  $('table.table-interactive td').click(function(){
+      var user_id = $(this).parent('tr').find('td:first').text()
+      $.ajax({
+          type: "POST",
+          url: "",
+          data: JSON.stringify({"user_id": user_id}),
+          contentType: "application/json; charset=utf-8",
+          dataType: "json",
+          success: function(data){
+            if (data.length > 0){
+              body = '<h2>Sent tasks</h2>'
+              body += '<table class="table"><tbody>'
+              $.each(data, function(index, value){
+                body += '<tr><td><a href="' + value + '" target="_blank">' + value + '</a></tr></td>'
+              });
+              body += '</tbody></table>'
+              body += '<button type="button" class="btn btn-outline-dark" id="clear-table">Delete table</button>'
+              $('#tasks-list').html(body);
+            }
+          },
+          failure: function(errMsg) {
+              alert(errMsg);
+          }
+      });
+  });
+  $(document).on('click', '#clear-table', function(){
+    $('#tasks-list').html('')
+  })
+</script>
+{% endblock js %}

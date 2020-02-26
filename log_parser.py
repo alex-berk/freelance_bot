@@ -102,6 +102,13 @@ def get_sent_tasks_q_wdays(log=None, site=None):
 	tasks.update([line for line in sent_task_lines])
 	return tasks
 
+def get_sent_tasks_list(log=None, user_id=''):
+	if not log:
+		log = get_current_log()
+	sent_tasks_lines = [line.event for line in log if "for the users" in line.event and str(user_id) in line.event]
+	sent_tasks = [line.split('\'')[1] for line in sent_tasks_lines]
+	return sent_tasks
+
 def get_sent_messages(log=None):
 	if not log:
 		log = get_current_log()
