@@ -69,11 +69,14 @@ def get_new_tasks_q(log=None):
 		hosts[task.split('/')[2]] += 1
 	return hosts
 
-def get_new_tasks_q_wdays(log=None):
+def get_new_tasks_q_wdays(log=None, site=None):
 	if not log:
 		log = get_logs_for_period()
 	new_tasks = []
-	new_task_lines = [line.time.split(';')[0] for line in log if line.event.startswith('Sending task') and line.event.endswith('to db')]
+	if not site:
+		new_task_lines = [line.time.split(';')[0] for line in log if line.event.startswith('Sending task') and line.event.endswith('to db')]
+	else:
+		new_task_lines = [line.time.split(';')[0] for line in log if line.event.startswith('Sending task') and line.event.endswith('to db') and site in line.event]
 	hosts = Counter()
 	hosts.update(new_task_lines)
 	return hosts
@@ -87,11 +90,14 @@ def get_sent_tasks_q(log=None):
 	tasks.update([line.split('/')[2] for line in sent_task_lines])
 	return tasks
 
-def get_sent_tasks_q_wdays(log=None):
+def get_sent_tasks_q_wdays(log=None, site=None):
 	if not log:
 		log = get_logs_for_period()
 	sent_tasks = []
-	sent_task_lines = [line.time.split(';')[0] for line in log if line.event.startswith('Found task')]
+	if not site:
+		sent_task_lines = [line.time.split(';')[0] for line in log if line.event.startswith('Found task')]
+	else:
+		sent_task_lines = [line.time.split(';')[0] for line in log if line.event.startswith('Found task') and site in line.event]
 	tasks = Counter()
 	tasks.update([line for line in sent_task_lines])
 	return tasks
@@ -106,15 +112,3 @@ def get_sent_messages(log=None):
 	users_ids_flatten = [item for sublist in users_ids for item in sublist]
 	users.update(users_ids_flatten)
 	return users
-
-if __name__ == '__main__':
-	lp = get_last_parsing()
-	nt = get_new_tasks_q(get_logs_for_period())
-	st = get_sent_tasks_q(get_logs_for_period())
-	# print(lp)
-	# print(nt)
-	# print(st)
-
-	print(sorted(get_new_tasks_q_wdays().items()))
-	# (l1, l2) = sorted(get_sent_tasks_q_wdays().items())
-	print([i[0] for i in sorted(get_sent_tasks_q_wdays().items())])

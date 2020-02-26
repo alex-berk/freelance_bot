@@ -96,5 +96,25 @@ var myChart = new Chart(ctx, {
           },
     }
 });
+
+$('td').click(function(){
+    var filter = $(this).parent('tr').find('td:first').text()
+    $.ajax({
+        type: "POST",
+        url: "",
+        data: JSON.stringify({"site_filter": filter}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(data){
+            lineChartData.datasets[0].data = data["ntdy"]
+            lineChartData.datasets[1].data = data["stdy"]
+            lineChartData.datasets[2].data = data["proc_sent_graph"]
+            myChart.update();
+        },
+        failure: function(errMsg) {
+            alert(errMsg);
+        }
+    });
+});
 </script>
 {% endblock chart %}
