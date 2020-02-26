@@ -1,8 +1,8 @@
 import os
-from flask import Flask, render_template, url_for, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager
+from flask import Flask, render_template, url_for, request, jsonify, redirect, flash
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms.validators import DataRequired
 import log_parser
 import db_handler
 
@@ -12,7 +12,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_TOKEN')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/dashboard', methods=['GET', 'POST'])
 def home():
 	if request.method == 'POST':
 		site_filter = request.json.get('site_filter')
@@ -56,3 +56,20 @@ def users():
 	sm = log_parser.get_sent_messages()
 	users = db_handler.get_users()
 	return render_template('users.html', title='Users stats', sm=sm, users=users)
+
+
+class LoginForm(FlaskForm):
+	login = StringField('Login', validators=[DataRequired()])
+	password = PasswordField('Password', validators=[DataRequired()])
+	remember = BooleanField('Remember Me')
+	submit = SubmitField('Login')
+
+@app.route('/', methods=['GET', 'POST'])
+def login():
+	form = LoginForm()
+	if form.validate_on_submit():
+		if form.login.data == 'admin' and form.password.data == 'admin':
+			return redirect(url_for('home'))
+		else:
+			flash('Check your username and password', 'danger')
+	return render_template('login.html', form=form)
