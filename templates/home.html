@@ -76,7 +76,8 @@ var myChart = new Chart(ctx, {
                 position: 'left',
                 display: true,
                 ticks: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    suggestedMax: {{ wnt[1] }}
                 }
             },
             {
@@ -86,7 +87,7 @@ var myChart = new Chart(ctx, {
                 display: true,
                 ticks: {
                     beginAtZero: true,
-                    // suggestedMax: 100,
+                    suggestedMax: 100,
                 },
                 gridLines: {
                     drawOnChartArea: false,
