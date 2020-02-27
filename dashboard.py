@@ -29,9 +29,14 @@ def home():
 		
 		elif request.json.get('target') == 'refresh':
 			site_filter = request.json.get('site_filter')
-			st = log_parser.get_sent_tasks_q(site=site_filter)
-			nt = log_parser.get_new_tasks_q(site=site_filter)
-			lp = log_parser.get_last_parsing(site=site_filter)
+			if site_filter == 'Total':
+				st = sum(log_parser.get_sent_tasks_q().values())
+				nt = sum(log_parser.get_new_tasks_q().values())
+				lp = '--'
+			else:
+				st = log_parser.get_sent_tasks_q(site=site_filter)
+				nt = log_parser.get_new_tasks_q(site=site_filter)
+				lp = log_parser.get_last_parsing(site=site_filter)
 			ltr = log_parser.get_last_telegram_response()
 			return jsonify({'st': st, 'nt':nt, 'lp': lp, 'ltr': ltr})
 		else:
