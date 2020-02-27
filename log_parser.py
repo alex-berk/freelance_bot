@@ -46,10 +46,14 @@ def get_all_hosts(log=None):
 			hosts.add(line.event[19:])
 	return hosts
 
-def get_last_parsing(log=None):
+def get_last_parsing(log=None, site=''):
 	if not log:
 		log = get_current_log()
 	hosts_time = []
+	if site:
+		for line in log[::-1]:
+			if 'Parsed' in line.event and site in line.event:
+				return line.time
 	for host in get_all_hosts(log):
 		for line in log[::-1]:
 			if line.event == 'Parsed ' + host:
@@ -57,16 +61,18 @@ def get_last_parsing(log=None):
 				break
 	return hosts_time
 
-def get_new_tasks_q(log=None):
+def get_new_tasks_q(log=None, site=''):
 	if not log:
 		log = get_current_log()
-	new_tasks = []
 	new_task_lines = [line.event[10:] for line in log if line.event[:9] == 'New tasks' and line.event != 'New tasks []']
+	new_tasks = []
 	for line in new_task_lines:
 		new_tasks.extend(json.loads(line.replace('\'', '"')))
 	hosts = Counter()
 	for task in new_tasks:
 		hosts[task.split('/')[2]] += 1
+	if site:
+		return hosts[site]
 	return hosts
 
 def get_new_tasks_q_wdays(log=None, site=None):
@@ -81,13 +87,15 @@ def get_new_tasks_q_wdays(log=None, site=None):
 	hosts.update(new_task_lines)
 	return hosts
 
-def get_sent_tasks_q(log=None):
+def get_sent_tasks_q(log=None, site=''):
 	if not log:
 		log = get_current_log()
 	sent_tasks = []
-	sent_task_lines = [line.event.split('\'')[1] for line in log if line.event[:10] == 'Found task']
+	sent_task_lines = [line.event.split('\'')[1] for line in log if line.event[:10] == 'Found task' and site in line.event]
 	tasks = Counter()
 	tasks.update([line.split('/')[2] for line in sent_task_lines])
+	if site:
+		return tasks[site]
 	return tasks
 
 def get_sent_tasks_q_wdays(log=None, site=None):

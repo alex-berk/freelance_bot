@@ -107,7 +107,7 @@ $('table.table-interactive td').click(function(){
     $.ajax({
         type: "POST",
         url: "",
-        data: JSON.stringify({"site_filter": filter}),
+        data: JSON.stringify({"site_filter": filter, "target": "graph"}),
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: function(data){
@@ -121,5 +121,29 @@ $('table.table-interactive td').click(function(){
         }
     });
 });
+
+// TODO: Replace this with websocket
+setInterval(function() {
+  var rows = $('table.table-interactive tr:not(.totals):has(td) td:first-child')
+    $.each(rows, function(index, row){
+      $.ajax({
+        type: "POST",
+        url: "",
+        data: JSON.stringify({"site_filter": row['innerText'], "target": "refresh"}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(data){
+          data['lp'];
+          el_number = index + 1
+          proc = parseFloat(data['st'] / data['nt'] * 100).toFixed(2)+" %"
+          proc = ' (' + proc + ')'
+          $('table.table-interactive tr:not(.totals):has(td):nth-child(' + el_number + ')').find('td:nth-child(2)').html(data['nt']);
+          $('table.table-interactive tr:not(.totals):has(td):nth-child(' + el_number + ')').find('td:nth-child(3)').html(data['st'] + proc);
+          $('table.table-interactive tr:not(.totals):has(td):nth-child(' + el_number + ')').find('td:nth-child(4)').html(data['lp']);
+          $('p:contains("Telegram response")').html('Last Telegram response: ' + data['ltr']);
+        }
+      });
+    });
+}, 1000 * 60);
 </script>
 {% endblock js %}
