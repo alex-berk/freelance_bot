@@ -37,13 +37,13 @@
           dataType: "json",
           success: function(data){
             if (data.length > 0){
-              body = '<h2>Sent tasks</h2>'
+              body = '<h2 style="float: left;">Sent tasks</h2>'
+              body += '<button type="button" class="btn btn-outline-dark" style="float: left; margin-left:15px;" id="clear-table">Clear table</button>'
               body += '<table class="table"><tbody>'
               $.each(data, function(index, value){
                 body += '<tr><td><a href="' + value + '" target="_blank">' + value + '</a></tr></td>'
               });
               body += '</tbody></table>'
-              body += '<button type="button" class="btn btn-outline-dark" id="clear-table">Delete table</button>'
               $('#tasks-list').html(body);
             }
           },
