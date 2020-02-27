@@ -77,7 +77,7 @@ var myChart = new Chart(ctx, {
                 display: true,
                 ticks: {
                     beginAtZero: true,
-                    suggestedMax: {{ wnt[1] }}
+                    suggestedMax: {{ (wnt | sort)[-1] }}
                 }
             },
             {
