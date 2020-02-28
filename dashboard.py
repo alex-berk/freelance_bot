@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template, url_for, request, jsonify, redirect, flash
 from flask_wtf import FlaskForm
+from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired
 import log_parser
@@ -9,10 +10,36 @@ import db_handler
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_TOKEN')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message_category = 'info'
+
+@login_manager.user_loader
+def load_user(user_id):
+	return User.get(user_id)
+
+class User(UserMixin):
+	users = {}
+
+	def __init__(self, id, username):
+		super().__init__()	
+		self.id = id
+		self.username = username
+		self.__class__.users[id] = self
+
+	def get_id(self):
+		return self.id
+
+	@classmethod
+	def get(cls, id):
+		return cls.users.get(id, None)
+
+User(1, 'Admin')
 
 
 @app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
 def home():
 	if request.method == 'POST':
 		if request.json.get('target') == 'graph':
@@ -63,6 +90,7 @@ def home():
 	return render_template('home.html', title='Parsing Stats', lt=lt, lp=lp, nt=nt, st=st, proc_sent=proc_sent, wnt=wnt, wst=wst, legend_days=legend_days, proc_sent_graph=proc_sent_graph, snt=snt, sst=sst)
 
 @app.route('/users', methods=['GET', 'POST'])
+@login_required
 def users():
 	if request.method == 'POST':
 		user_id = request.json.get('user_id')
@@ -82,10 +110,21 @@ class LoginForm(FlaskForm):
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
+	if current_user.is_authenticated:
+		return redirect(url_for('home'))
 	form = LoginForm()
 	if form.validate_on_submit():
 		if form.login.data == 'admin' and form.password.data == 'admin':
-			return redirect(url_for('home'))
+			user = User.get(1)
+			login_user(user, remember=form.remember.data)
+			next_page = request.args.get('next')
+			return redirect(next_page or url_for('home'))
 		else:
 			flash('Check your username and password', 'danger')
 	return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+	logout_user()
+	return redirect(url_for('login'))
