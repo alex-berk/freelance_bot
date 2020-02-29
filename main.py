@@ -176,7 +176,7 @@ def handle_text(message):
 
 	elif bot.verify_context_message(message, 'setup_keys_add'):
 		s_keys_old = db_handler.get_user_skeys(message["chat"]["id"])
-		s_keys_new = [key for key in  parse_string(message["text"], sep=',') if key not in s_keys_old]
+		s_keys_new = [key for key in parse_string(message["text"], sep=',') if key not in s_keys_old]
 		s_keys = s_keys_old + s_keys_new
 		db_handler.update_user_keys(message["chat"]["id"], s_keys)
 		confirm_keys_setup(message["chat"]["id"], s_keys)

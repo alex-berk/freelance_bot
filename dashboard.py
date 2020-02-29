@@ -28,7 +28,7 @@ class User(UserMixin):
 	def __init__(self, username, password):
 		super().__init__()
 		self.username = username
-		self.password = password
+		self.password = bcrypt.generate_password_hash(password).decode('utf-8')
 		self.id = max(self.__class__.users) + 1
 		self.__class__.users[self.id] = self
 
@@ -40,7 +40,7 @@ class User(UserMixin):
 		return cls.users.get(id, None)
 
 user_login = os.environ.get('DASHBOARD_LOGIN')
-user_pass = bcrypt.generate_password_hash(os.environ.get('DASHBOARD_PASS')).decode('utf-8')
+user_pass = os.environ.get('DASHBOARD_PASS')
 User(user_login, user_pass)
 
 def dashboard_graph_stats(site_filter):
@@ -99,8 +99,7 @@ def home():
 		elif request.json.get('target') == 'refresh':
 			data = dashboard_table_refresh(site_filter)
 			return jsonify(data)
-		else:
-			return '', 204
+		return '', 204
 
 	data = get_dashboard_data()
 	return render_template('home.html', title='Parsing Stats', **data)
