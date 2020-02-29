@@ -43,38 +43,30 @@ user_login = os.environ.get('DASHBOARD_LOGIN')
 user_pass = bcrypt.generate_password_hash(os.environ.get('DASHBOARD_PASS')).decode('utf-8')
 User(user_login, user_pass)
 
+def dashboard_graph_stats(site_filter):
+	if site_filter == 'Total':
+		site_filter = None
+	ntdy = log_parser.get_new_tasks_q_wdays(site=site_filter)
+	stdy = log_parser.get_sent_tasks_q_wdays(site=site_filter)
 
-@app.route('/dashboard', methods=['GET', 'POST'])
-@login_required
-def home():
-	if request.method == 'POST':
-		if request.json.get('target') == 'graph':
-			site_filter = request.json.get('site_filter')
-			if site_filter == 'Total':
-				site_filter = None
-			ntdy = log_parser.get_new_tasks_q_wdays(site=site_filter)
-			stdy = log_parser.get_sent_tasks_q_wdays(site=site_filter)
+	proc_sent_graph = list( map(lambda x, y: round((x[1] / y[1]) * 100, 2), sorted(stdy.items()), sorted(ntdy.items())) )
+	ntdy = [i[1] for i in sorted(ntdy.items())]
+	stdy = [i[1] for i in sorted(stdy.items())]
+	return {'ntdy': ntdy, 'stdy': stdy, 'proc_sent_graph': proc_sent_graph}
 
-			proc_sent_graph = list( map(lambda x, y: round((x[1] / y[1]) * 100, 2), sorted(stdy.items()), sorted(ntdy.items())) )
-			ntdy = [i[1] for i in sorted(ntdy.items())]
-			stdy = [i[1] for i in sorted(stdy.items())]
-			return jsonify({'ntdy': ntdy, 'stdy': stdy, 'proc_sent_graph': proc_sent_graph})
-		
-		elif request.json.get('target') == 'refresh':
-			site_filter = request.json.get('site_filter')
-			if site_filter == 'Total':
-				st = sum(log_parser.get_sent_tasks_q().values())
-				nt = sum(log_parser.get_new_tasks_q().values())
-				lp = '--'
-			else:
-				st = log_parser.get_sent_tasks_q(site=site_filter)
-				nt = log_parser.get_new_tasks_q(site=site_filter)
-				lp = log_parser.get_last_parsing(site=site_filter)
-			ltr = log_parser.get_last_telegram_response()
-			return jsonify({'st': st, 'nt':nt, 'lp': lp, 'ltr': ltr})
-		else:
-			return '', 204
+def dashboard_table_refresh(site_filter):
+	if site_filter == 'Total':
+		st = sum(log_parser.get_sent_tasks_q().values())
+		nt = sum(log_parser.get_new_tasks_q().values())
+		lp = '--'
+	else:
+		st = log_parser.get_sent_tasks_q(site=site_filter)
+		nt = log_parser.get_new_tasks_q(site=site_filter)
+		lp = log_parser.get_last_parsing(site=site_filter)
+	ltr = log_parser.get_last_telegram_response()
+	return {'st': st, 'nt':nt, 'lp': lp, 'ltr': ltr}
 
+def get_dashboard_data():
 	lt = log_parser.get_last_telegram_response()
 	lp = log_parser.get_last_parsing()
 	nt = log_parser.get_new_tasks_q()
@@ -93,7 +85,25 @@ def home():
 	snt = sum(nt.values())
 	sst = sum(st.values())
 
-	return render_template('home.html', title='Parsing Stats', lt=lt, lp=lp, nt=nt, st=st, proc_sent=proc_sent, wnt=wnt, wst=wst, legend_days=legend_days, proc_sent_graph=proc_sent_graph, snt=snt, sst=sst)
+	return {'lt':lt, 'lp':lp, 'nt':nt, 'st':st, 'proc_sent':proc_sent, 'wnt':wnt, 'wst':wst, 'legend_days':legend_days, 'proc_sent_graph':proc_sent_graph, 'snt':snt, 'sst':sst}
+
+
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def home():
+	if request.method == 'POST':
+		site_filter = request.json.get('site_filter')
+		if request.json.get('target') == 'graph':
+			data = dashboard_graph_stats(site_filter)
+			return jsonify(data)
+		elif request.json.get('target') == 'refresh':
+			data = dashboard_table_refresh(site_filter)
+			return jsonify(data)
+		else:
+			return '', 204
+
+	data = get_dashboard_data()
+	return render_template('home.html', title='Parsing Stats', **data)
 
 @app.route('/users', methods=['GET', 'POST'])
 @login_required
