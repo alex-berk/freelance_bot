@@ -2,8 +2,11 @@
 Scrapper that looks for intetersting tasks on freelance sites and sends Telegram message when it finds them
 
 ## enviroment variables
-In order to work you'll need to setup BOT_TOKEN (token of your bot, you cang get it from [BotFather](https://t.me/botfather))
-and CHAT_ID (admin's telegram id) enviroment variables
+In order to work you'll need to setup:
+* BOT_TOKEN 		(token of your bot, you cang get it from [BotFather](https://t.me/botfather))
+* CHAT_ID 			(admin's telegram id) enviroment variables
+* SECRET_TOKEN 		(just generate with secrets.token_hex(16))
 
 ## parameters
-You can run with parameter `parser` to run only parser part or `bot` to run only bot part
+You can run with parameter `parser` to run only parser part, `bot` to run only bot part or `dashboard` to run only dashboard part.
+When running dashboard you can spicify host and port with `-host` and `-port` arguments

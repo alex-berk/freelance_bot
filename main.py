@@ -23,7 +23,9 @@ logger.addHandler(stream_handler)
 
 
 argparser = argparse.ArgumentParser(description='You can specify whether you want to run only parser or bot part of the script')
-argparser.add_argument('part', nargs="*", default=['both'], help='Name of the part you want to run (bot or parser)')
+argparser.add_argument('part', nargs="*", default=['all'], help='Name of the part you want to run (bot, parser or dashboard)')
+argparser.add_argument('-port', default=5000, help='Port to run dashboard on')
+argparser.add_argument('-host', default='127.0.0.1', help='Host to run dashboard on')
 args = argparser.parse_args()
 
 
@@ -250,10 +252,13 @@ if __name__ == '__main__':
 	elif inline_argument == 'bot':
 		bot_listener()
 	elif inline_argument == 'dashboard':
-		app.run(debug=True)
-	else:
+		host, port = args.host, args.port
+		app.run(debug=True, host=host, port=port)
+	elif inline_argument == 'all':
 		with concurrent.futures.ThreadPoolExecutor() as executor:
 			threads = [executor.submit(parser), executor.submit(bot_listener), executor.submit(app.run)]
 
 			for f in concurrent.futures.as_completed(threads):
 				f.result()
+	else:
+		raise KeyError('Invalid argument')
