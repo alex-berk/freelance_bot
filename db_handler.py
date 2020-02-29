@@ -47,7 +47,7 @@ def get_users():
 	conn = sqlite3.connect('data.db')
 	cursor = conn.cursor()
 	cursor.execute("SELECT * FROM users")
-	return [(User(row[0], row[1].split(";"))) for row in cursor.fetchall()]
+	return [(User(str(row[0]), row[1].split(";"))) for row in cursor.fetchall()]
 
 def get_user_skeys(user_id):
 	conn = sqlite3.connect('data.db')

@@ -1,0 +1,149 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+     <h1 class="display-4">Stats</h1>
+   </div>
+    <div class="table-responsive">
+     <table class="table table-interactive">
+       <thead>
+         <tr>
+           <th>Host</th>
+           <th>Parsed, today</th>
+           <th>Sent, today</th>
+           <th>Last parsing</th>
+         </tr>
+       </thead>
+       <tbody>
+        {% for hostname, time in lp %}
+        <tr>
+          <td>{{ hostname }}</td>
+          <td>{{ nt[hostname] }}</td>
+          <td>{{ st.get(hostname, 0) }} ({{ '%0.2f' % proc_sent.get(hostname)|float }} %)</td>
+          <td>{{ time }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="totals">
+          <td>Total</td>
+          <td>{{ snt }}</td>
+          <td>{{ sst }}</td>
+          <td> -- </td>
+        </tr>
+       </tbody>
+     </table>
+    </div>
+     <p>Last Telegram response: {{ lt }}</p>
+     <canvas id="myChart" width="400" height="120"></canvas>
+{% endblock content %}
+{% block js %}
+<script>
+var ctx = document.getElementById('myChart').getContext('2d');
+var lineChartData = {
+  labels: [{% for day in legend_days %} '{{day}}', {% endfor %}],
+  datasets: [{
+      label: 'Parsed',
+      data: {{ wnt }},
+      yAxisID: 'axis-1',
+      borderWidth: 0,
+      backgroundColor: [
+          'rgba(255, 40, 0, 0.3)']
+  },
+  {
+      label: 'Sent',
+      data: {{ wst }},
+      yAxisID: 'axis-1',
+      borderWidth: 0,
+      backgroundColor: [
+          'rgba(40, 0, 255, 0.3)']
+  },
+  {
+      label: 'Proc Sent',
+      fill: false,
+      data: {{ proc_sent_graph }},
+      yAxisID: 'axis-2',
+      borderWidth: 0,
+      borderColor:[
+          'rgb(80, 0, 0)'],
+  },
+  ]
+}
+var myChart = new Chart(ctx, {
+    type: 'line',
+    data: lineChartData,
+    options: {
+        scales: {
+            yAxes: [{
+                id: 'axis-1',
+                position: 'left',
+                display: true,
+                ticks: {
+                    beginAtZero: true,
+                    suggestedMax: {{ (wnt | sort)[-1] }}
+                }
+            },
+            {
+                type: 'linear',
+                id: 'axis-2',
+                position: 'right',
+                display: true,
+                ticks: {
+                    beginAtZero: true,
+                    suggestedMax: 100,
+                },
+                gridLines: {
+                    drawOnChartArea: false,
+                  },
+            },
+            ]
+        },
+        tooltips: {
+            mode: 'index',
+            intersect: false,
+          },
+    }
+});
+
+$('table.table-interactive td').click(function(){
+    var filter = $(this).parent('tr').find('td:first').text()
+    $.ajax({
+        type: "POST",
+        url: "",
+        data: JSON.stringify({"site_filter": filter, "target": "graph"}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(data){
+            lineChartData.datasets[0].data = data["ntdy"]
+            lineChartData.datasets[1].data = data["stdy"]
+            lineChartData.datasets[2].data = data["proc_sent_graph"]
+            myChart.update();
+        },
+        failure: function(errMsg) {
+            alert(errMsg);
+        }
+    });
+});
+
+// TODO: Replace this with websocket
+setInterval(function() {
+  var rows = $('table.table-interactive tr:has(td) td:first-child')
+    $.each(rows, function(index, row){
+      $.ajax({
+        type: "POST",
+        url: "",
+        data: JSON.stringify({"site_filter": row['innerText'], "target": "refresh"}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(data){
+          data['lp'];
+          el_number = index + 1
+          proc = parseFloat(data['st'] / data['nt'] * 100).toFixed(2)+" %"
+          proc = ' (' + proc + ')'
+          $('table.table-interactive tr:has(td):nth-child(' + el_number + ')').find('td:nth-child(2)').html(data['nt']);
+          $('table.table-interactive tr:has(td):nth-child(' + el_number + ')').find('td:nth-child(3)').html(data['st'] + proc);
+          $('table.table-interactive tr:has(td):nth-child(' + el_number + ')').find('td:nth-child(4)').html(data['lp']);
+          $('p:contains("Telegram response")').html('Last Telegram response: ' + data['ltr']);
+        }
+      });
+    });
+}, 1000 * 50);
+</script>
+{% endblock js %}

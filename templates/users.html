@@ -1,0 +1,59 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+     <h1 class="display-4">Users stats</h1>
+   </div>
+    <div class="table-responsive">
+     <table class="table table-interactive">
+       <thead>
+         <tr>
+           <th>Chat id</th>
+           <th>Keywords</th>
+           <th>Messages Sent, today</th>
+         </tr>
+       </thead>
+       <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.chat_id }}</td>
+          <td>{{ ', '.join(user.keywords[1:-1]) }}</td>
+          <td>{{ sm[user.chat_id] }}</td>
+        </tr>
+        {% endfor %}
+       </tbody>
+     </table>
+    </div>
+    <div class="table-responsive" id="tasks-list"></div>
+{% endblock content %}
+{% block js %}
+<script>
+  $('table.table-interactive td').click(function(){
+      var user_id = $(this).parent('tr').find('td:first').text()
+      $.ajax({
+          type: "POST",
+          url: "",
+          data: JSON.stringify({"user_id": user_id}),
+          contentType: "application/json; charset=utf-8",
+          dataType: "json",
+          success: function(data){
+            if (data.length > 0){
+              body = '<h2 style="float: left;">Sent tasks</h2>'
+              body += '<button type="button" class="btn btn-outline-dark" style="float: left; margin-left:15px;" id="clear-table">Clear table</button>'
+              body += '<table class="table"><tbody>'
+              $.each(data, function(index, value){
+                body += '<tr><td><a href="' + value + '" target="_blank">' + value + '</a></tr></td>'
+              });
+              body += '</tbody></table>'
+              $('#tasks-list').html(body);
+            }
+          },
+          failure: function(errMsg) {
+              alert(errMsg);
+          }
+      });
+  });
+  $(document).on('click', '#clear-table', function(){
+    $('#tasks-list').html('')
+  })
+</script>
+{% endblock js %}

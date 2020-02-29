@@ -1,0 +1,16 @@
+body{
+	background-color: #f5f5f5;
+	font-family: -apple-system,BlinkMacSystemFont,segoe ui,roboto,oxygen,ubuntu,cantarell,fira sans,droid sans,helvetica neue,sans-serif;
+}
+body>.container{
+	margin-bottom: 15px;
+}
+
+table.table-interactive tr:hover td{
+	cursor: pointer;
+	background-color: #e8e8e8;
+}
+table.table-interactive tr.totals td {
+	font-weight: bold;
+	border-top: 3px solid #dee2e6;
+}

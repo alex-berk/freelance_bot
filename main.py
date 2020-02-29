@@ -10,6 +10,7 @@ import tgbot
 import db_handler
 from parsers import Parser, JsonParser
 import log_parser
+from dashboard import app
 
 logger = logging.getLogger('__main__')
 logger.setLevel(logging.DEBUG)
@@ -22,7 +23,9 @@ logger.addHandler(stream_handler)
 
 
 argparser = argparse.ArgumentParser(description='You can specify whether you want to run only parser or bot part of the script')
-argparser.add_argument('part', nargs="*", default=['both'], help='Name of the part you want to run (bot or parser)')
+argparser.add_argument('part', nargs="*", default=['all'], help='Name of the part you want to run (bot, parser or dashboard)')
+argparser.add_argument('-port', default=5000, help='Port to run dashboard on')
+argparser.add_argument('-host', default='127.0.0.1', help='Host to run dashboard on')
 args = argparser.parse_args()
 
 
@@ -121,11 +124,10 @@ def handle_commands(message):
 	if bot.verify_command(message["text"], 'status'):
 		status_text = 'Up and running!'
 		if message["chat"]["id"] == bot.admin_chat_id:
-			c_log = log_parser.get_current_log()
-			ltg = log_parser.search_last_telegram_response(c_log)
-			lp = log_parser.get_last_parsing(c_log)
+			ltg = log_parser.get_last_telegram_response()
+			lp = log_parser.get_last_parsing()
 			lp_s = ''.join([f'{k}: {v}\n' for (k, v) in lp])
-			nt = log_parser.get_new_tasks_q(c_log)
+			nt = log_parser.get_new_tasks_q()
 			nt_s = '\n'.join([f'{k}: {v}' for (k, v) in nt.items()])
 			status_text = f"\n<b>Last Telegram Response:</b>{ltg}\n\n<b>Last Parsing:</b>\n{lp_s}\n<b>Found Tasks Today:</b>\n{nt_s}\n"
 		if bot.context.get(message["chat"]["id"], {'name': None})['name']:
@@ -242,7 +244,6 @@ def parser():
 
 
 if __name__ == '__main__':
-	os.system('cls' if os.name=='nt' else 'clear')
 	logger.debug('Started')
 	
 	inline_argument = args.part.pop()
@@ -250,9 +251,14 @@ if __name__ == '__main__':
 		parser()
 	elif inline_argument == 'bot':
 		bot_listener()
-	else:
+	elif inline_argument == 'dashboard':
+		host, port = args.host, args.port
+		app.run(debug=True, host=host, port=port)
+	elif inline_argument == 'all':
 		with concurrent.futures.ThreadPoolExecutor() as executor:
-			threads = [executor.submit(parser), executor.submit(bot_listener)]
+			threads = [executor.submit(parser), executor.submit(bot_listener), executor.submit(app.run)]
 
 			for f in concurrent.futures.as_completed(threads):
 				f.result()
+	else:
+		raise KeyError('Invalid argument')
