@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, url_for, request, jsonify, redirect, flash
 from flask_wtf import FlaskForm
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
+from flask_bcrypt import Bcrypt
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired
 import log_parser
@@ -10,7 +11,9 @@ import db_handler
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_TOKEN')
+bcrypt = Bcrypt()
 login_manager = LoginManager()
+bcrypt.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
@@ -20,13 +23,14 @@ def load_user(user_id):
 	return User.get(user_id)
 
 class User(UserMixin):
-	users = {}
+	users = {0: None}
 
-	def __init__(self, id, username):
-		super().__init__()	
-		self.id = id
+	def __init__(self, username, password):
+		super().__init__()
 		self.username = username
-		self.__class__.users[id] = self
+		self.password = password
+		self.id = max(self.__class__.users) + 1
+		self.__class__.users[self.id] = self
 
 	def get_id(self):
 		return self.id
@@ -35,7 +39,9 @@ class User(UserMixin):
 	def get(cls, id):
 		return cls.users.get(id, None)
 
-User(1, 'Admin')
+user_login = os.environ.get('DASHBOARD_LOGIN')
+user_pass = bcrypt.generate_password_hash(os.environ.get('DASHBOARD_PASS')).decode('utf-8')
+User(user_login, user_pass)
 
 
 @app.route('/dashboard', methods=['GET', 'POST'])
@@ -114,8 +120,8 @@ def login():
 		return redirect(url_for('home'))
 	form = LoginForm()
 	if form.validate_on_submit():
-		if form.login.data == 'admin' and form.password.data == 'admin':
-			user = User.get(1)
+		user = User.get(1)
+		if form.login.data.lower() == user.username.lower() and bcrypt.check_password_hash(user.password, form.password.data):
 			login_user(user, remember=form.remember.data)
 			next_page = request.args.get('next')
 			return redirect(next_page or url_for('home'))
