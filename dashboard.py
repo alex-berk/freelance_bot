@@ -108,9 +108,15 @@ def home():
 @login_required
 def users():
 	if request.method == 'POST':
-		user_id = request.json.get('user_id')
-		stl = log_parser.get_sent_tasks_list(user_id=user_id)
-		return jsonify(stl)
+		if request.form:
+			user = request.form['user']
+			keywords = request.form['keywords'].split(', ') # TODO: Add parse_string() here
+			db_handler.update_user_keys(user, keywords)
+			return redirect(url_for('users'))
+		elif request.json:
+			user_id = request.json.get('user_id')
+			stl = log_parser.get_sent_tasks_list(user_id=user_id)
+			return jsonify(stl)
 
 	sm = log_parser.get_sent_messages()
 	users = db_handler.get_users()

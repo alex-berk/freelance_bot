@@ -14,3 +14,6 @@ table.table-interactive tr.totals td {
 	font-weight: bold;
 	border-top: 3px solid #dee2e6;
 }
+.modal-dialog{
+	max-width: 750px;
+}
