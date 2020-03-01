@@ -1,5 +1,5 @@
-import os, logging
-import datetime
+import os
+import logging
 import requests, json
 
 logger = logging.getLogger('__main__')
