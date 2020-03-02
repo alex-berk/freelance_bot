@@ -5,11 +5,11 @@ import requests, json
 logger = logging.getLogger('__main__')
 
 
-class BotNotifier():
+class TgBot():
 	
 	def __init__(self, token, admin_chat_id):
 		self.token = token
-		self.admin_chat_id = admin_chat_id
+		self.admin_chat_id = int(admin_chat_id)
 		self.username = self.call_tg_api('getMe')["result"]["username"]
 		self.context = {}
 		self.handlers = {}

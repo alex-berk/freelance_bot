@@ -140,8 +140,10 @@ class JsonParser(Parser):
 
 if __name__ == '__main__':
 
+	'''Sample parser configs for testing
+	'''
+	
 	# print(Parser.get_gdoc_config('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM'))
-
 
 	flnsm_params = {
 		'url': 'https://freelansim.ru/tasks',
@@ -182,11 +184,11 @@ if __name__ == '__main__':
 	}
 
 	freelansim = JsonParser(**flnsm_params)
-	# freelancehunt = Parser(**frlnchnt_params)
+	freelancehunt = Parser(**frlnchnt_params)
 	guru = JsonParser(**guru_params)
 
 
-	for index, instance in enumerate(JsonParser.instances):
+	for index, instance in enumerate(Parser.instances):
 		print(index, instance)
 
 	for result in Parser.parse_all():

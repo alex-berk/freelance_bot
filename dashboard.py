@@ -5,8 +5,7 @@ from flask_login import LoginManager, UserMixin, login_user, current_user, logou
 from flask_bcrypt import Bcrypt
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired
-import log_parser
-import db_handler
+from utils import log_parser, db_handler, parse_string
 
 
 app = Flask(__name__)
@@ -110,7 +109,7 @@ def users():
 	if request.method == 'POST':
 		if request.form:
 			user = request.form['user']
-			keywords = request.form['keywords'].split(', ') # TODO: Add parse_string() here
+			keywords = parse_string(request.form['keywords'], sep=",")
 			db_handler.update_user_keys(user, keywords)
 			return redirect(url_for('users'))
 		elif request.json:
