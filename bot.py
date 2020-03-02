@@ -10,10 +10,10 @@ bot = TgBot(os.environ.get('BOT_TOKEN'), os.environ.get('CHAT_ID'))
 def setup_keys(chat_id):
 	current_keys = db_handler.get_user_skeys(chat_id)
 	if current_keys and bot.context.get(chat_id) != 'setup_keys_replace':
-		bot.context[chat_id] = {'name': 'setup_keys'}
+		bot.set_context(chat_id, 'setup_keys')
 		bot.send_message(f'Ваши текущие ключевые слова для поиска:\n<b>{", ".join(current_keys)}</b>\n\nВы хотите добавить новые ключи к существующим, удилить некоторые из них или заменить весь список?', chat_id, keyboard=(['Добавить', 'Заменить', 'Удалить', '❌ Отмена'], 3))
 	else:
-		bot.context[chat_id] = {'name': 'setup_keys_init'}
+		bot.set_context(chat_id, 'setup_keys_init')
 		setup_text = 'Сейчас можно будет задать ключевые слова для поиска.\nКаждый раз, когда бот будет находить их в задаче, вам придет оповещение.\nКлючи разделяются запятой.\nДопускается использование только букв, цифр и пробелов.\nПоиск осуществляется по тегам и отдельным словам из заголовков, так что лучше задавать однословные ключи.\n\n<code>Пример:</code>\n<code>node js, java script, js, фронтенд</code>'
 		bot.send_message(setup_text, chat_id, keyboard=['❌ Отмена'])
 
@@ -21,7 +21,7 @@ def confirm_keys_setup(chat_id, s_keys):
 	confirm_text = 'Все готово. Ваши ключевые слова для поиска:\n<b>' + ", ".join(s_keys) + '</b>\n\nНачинаю отслеживать задачи'
 	bot.send_message(confirm_text, chat_id)
 	bot.send_sticker('CAADAgADBwIAArD72weq7luNKMN99BYE', chat_id)
-	bot.context[chat_id] = None
+	bot.set_context(chat_id, None)
 
 @bot.commands_handler
 def handle_commands(message):
@@ -51,7 +51,7 @@ def handle_commands(message):
 		setup_keys(message.chat_id)
 
 	elif bot.verify_command(message.text, 'stop'):
-		bot.context[message.chat_id] = {'name': 'stop_tacking'}
+		bot.set_context(message.chat_id, 'stop_tacking')
 		bot.send_message('Вы точно хотите остановить отслеживание?', message.chat_id, keyboard=['Да', 'Нет'])
 
 	elif bot.verify_command(message.text, 'cancel'):
@@ -68,15 +68,15 @@ def handle_text(message):
 			bot.send_message('Нечего отменить', message.chat_id)
 	
 	elif bot.verify_context_message(message, 'setup_keys', 'добавить'):
-		bot.context[message.chat_id] = {'name': 'setup_keys_add'}
+		bot.set_context(message.chat_id, 'setup_keys_add')
 		bot.send_message(f'Напишите через запятую слова, которые нужно добавить к вашему списку', message.chat_id, keyboard=['❌ Отмена'])
 
 	elif bot.verify_context_message(message, 'setup_keys', 'заменить'):
-		bot.context[message.chat_id] = {'name': 'setup_keys_replace'}
+		bot.set_context(message.chat_id, 'setup_keys_replace')
 		bot.send_message(f'Напишите слова, которыми нужно заменить существующие', message.chat_id, keyboard=['❌ Отмена'])
 
 	elif bot.verify_context_message(message, 'setup_keys', 'удалить'):
-		bot.context[message.chat_id] = {'name': 'setup_keys_delete'}
+		bot.set_context(message.chat_id, 'setup_keys_delete')
 		bot.context[message.chat_id]['working_keys'] = db_handler.get_user_skeys(message.chat_id)
 		bot.send_message(f'Напишите слова, которые нужно удалить через запятую или выберете их внизу, на выпадающей клавиатуре', message.chat_id, keyboard=['✅ Готово', '❌ Отмена'] + bot.context[message.chat_id]['working_keys'])
 
