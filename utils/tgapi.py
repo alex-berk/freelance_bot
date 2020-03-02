@@ -97,11 +97,13 @@ class TgBot():
 
 	def verify_context_message(self, message, step_name=None, message_text=None):
 		if step_name:
-			step_result = self.context.get(message.chat_id, {'name': None})['name'] == step_name
+			print(step_name, self.context.get(message.chat_id, {'name': None})['name'])
+			step_result = self.context.get(message.chat_id, {'name': None})['name'] == step_name.lower()
 		else:
 			step_result = True
 		if message_text:
-			message_result = message.text.lower() == message_text
+			print(message_text, message.text.lower())
+			message_result = message.text.lower() == message_text.lower()
 		else:
 			message_result = True
 		return step_result and message_result
