@@ -78,7 +78,7 @@ class Parser:
 		except requests.exceptions.ReadTimeout:
 			logger.error('Timeout Error')
 			time.sleep(60)
-			get_gdoc_confing(doc_id, page_id)
+			get_gdoc_config(doc_id, page_id)
 
 		reader = csv.reader(r.text.split('\r\n'), delimiter=',')
 		table = [row for row in reader][1:]
