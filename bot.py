@@ -15,6 +15,10 @@ for chat_id, pref in loc.preferences.items():
 def get_loc_text(text_name, chat_id):
 	return loc.msgs[text_name][bot.context[chat_id]['lang']]
 
+def loc_reply(message, text_name, **kwargs):
+	message_text = get_loc_text(text_name, message.chat_id)
+	message.reply(message_text, **kwargs)
+
 def setup_laguage_init(chat_id):
 	bot.set_context(chat_id, 'setup_language_init')
 	bot.send_message('What language do you prefer?', chat_id, keyboard=['🇷🇺 Русский', '🇺🇸 English'])
@@ -74,34 +78,33 @@ def handle_commands(message):
 
 	elif bot.verify_command(message.text, 'stop'):
 		bot.set_context(message.chat_id, 'stop_tacking')
-		msg = get_loc_text('confirm_stop', message.chat_id)
-		message.reply(msg, keyboard=[get_loc_text('button_yes', message.chat_id), get_loc_text('button_no', message.chat_id)])
+		loc_reply(message, 'confirm_stop', keyboard=[get_loc_text('button_yes', message.chat_id), get_loc_text('button_no', message.chat_id)])
 
 	elif bot.verify_command(message.text, 'cancel'):
 		bot.set_context(message.chat_id, None)
-		message.reply(get_loc_text('action_cancelled', message.chat_id))
+		loc_reply(message, 'action_cancelled')
 	
 @bot.message_handler
 def handle_text(message):
 	if message.text.lower() in [get_loc_text('button_no', message.chat_id).lower(), get_loc_text('button_cancel', message.chat_id).lower()]:
 		if bot.context.get(message.chat_id, None):
 			bot.set_context(message.chat_id, None)
-			message.reply(get_loc_text('action_cancelled', message.chat_id))
+			loc_reply(message, 'action_cancelled')
 		else:
 			message.reply('Nothing to cancel')
 	
 	elif bot.verify_context_message(message, 'setup_keys', get_loc_text('button_add', message.chat_id)):
 		bot.set_context(message.chat_id, 'setup_keys_add')
-		message.reply(get_loc_text('give_add_words', message.chat_id), keyboard=[get_loc_text('button_cancel', message.chat_id)])
+		loc_reply(message, 'give_add_words', keyboard=[get_loc_text('button_cancel', message.chat_id)])
 
 	elif bot.verify_context_message(message, 'setup_keys', get_loc_text('button_replace', message.chat_id)):
 		bot.set_context(message.chat_id, 'setup_keys_replace')
-		message.reply(get_loc_text('give_replace_words', message.chat_id), keyboard=[get_loc_text('button_cancel', message.chat_id)])
+		loc_reply(message, 'give_replace_words', keyboard=[get_loc_text('button_cancel', message.chat_id)])
 
 	elif bot.verify_context_message(message, 'setup_keys', get_loc_text('button_delete', message.chat_id)):
 		bot.set_context(message.chat_id, 'setup_keys_delete')
 		bot.context[message.chat_id]['working_keys'] = db_handler.get_user_skeys(message.chat_id)
-		message.reply(get_loc_text('give_replace_words', message.chat_id), keyboard=[get_loc_text('button_done', message.chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
+		loc_reply(message, 'give_replace_words', keyboard=[get_loc_text('button_done', message.chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
 
 	elif bot.verify_context_message(message, 'setup_keys_add'):
 		s_keys_old = db_handler.get_user_skeys(message.chat_id)
@@ -162,7 +165,7 @@ def handle_text(message):
 
 	elif bot.verify_context_message(message, 'stop_tacking', get_loc_text('button_yes', message.chat_id)):
 		db_handler.delete_user(message.chat_id)
-		message.reply(get_loc_text('stoped_tracking', message.chat_id))
+		loc_reply(message, 'stoped_tracking')
 		bot.set_context(message.chat_id, None)
 	
 	else:
