@@ -56,14 +56,13 @@ def handle_commands(message):
 			nt = log_parser.get_new_tasks_q()
 			nt_s = '\n'.join([f'{k}: {v}' for (k, v) in nt.items()])
 			status_text = f"\n<b>Last Telegram Response:</b>{ltg}\n\n<b>Last Parsing:</b>\n{lp_s}\n<b>Found Tasks Today:</b>\n{nt_s}\n"
-		if bot.context.get(message.chat_id, {'name': None})['name']:
+		if bot.context.get(message.chat_id, {'name': None}).get('name', None):
 			status_text += '\n<b>Current setup step:</b> ' + bot.context[message.chat_id]['name']
-		bot.send_message(status_text, message.chat_id, disable_preview=True)
+		message.reply(status_text, disable_preview=True)
 	
 	elif bot.verify_command(message.text, 'start'):
 		if db_handler.get_user_skeys(message.chat_id):
-			msg = get_loc_text('keywords_already_setted_up', message.chat_id)
-			bot.send_message(msg, message.chat_id)
+			message.reply(get_loc_text('keywords_already_setted_up', message.chat_id))
 		else:
 			setup_laguage_init(message.chat_id)
 	
@@ -76,33 +75,33 @@ def handle_commands(message):
 	elif bot.verify_command(message.text, 'stop'):
 		bot.set_context(message.chat_id, 'stop_tacking')
 		msg = get_loc_text('confirm_stop', message.chat_id)
-		bot.send_message(msg, message.chat_id, keyboard=[get_loc_text('button_yes', message.chat_id), get_loc_text('button_no', message.chat_id)])
+		message.reply(msg, keyboard=[get_loc_text('button_yes', message.chat_id), get_loc_text('button_no', message.chat_id)])
 
 	elif bot.verify_command(message.text, 'cancel'):
 		bot.set_context(message.chat_id, None)
-		bot.send_message(get_loc_text('action_cancelled', message.chat_id), message.chat_id)
+		message.reply(get_loc_text('action_cancelled', message.chat_id))
 	
 @bot.message_handler
 def handle_text(message):
 	if message.text.lower() in [get_loc_text('button_no', message.chat_id).lower(), get_loc_text('button_cancel', message.chat_id).lower()]:
 		if bot.context.get(message.chat_id, None):
 			bot.set_context(message.chat_id, None)
-			bot.send_message(get_loc_text('action_cancelled', message.chat_id), message.chat_id)
+			message.reply(get_loc_text('action_cancelled', message.chat_id))
 		else:
-			bot.send_message('Nothing to cancel', message.chat_id)
+			message.reply('Nothing to cancel')
 	
 	elif bot.verify_context_message(message, 'setup_keys', get_loc_text('button_add', message.chat_id)):
 		bot.set_context(message.chat_id, 'setup_keys_add')
-		bot.send_message(get_loc_text('give_add_words', message.chat_id), message.chat_id, keyboard=[get_loc_text('button_cancel', message.chat_id)])
+		message.reply(get_loc_text('give_add_words', message.chat_id), keyboard=[get_loc_text('button_cancel', message.chat_id)])
 
 	elif bot.verify_context_message(message, 'setup_keys', get_loc_text('button_replace', message.chat_id)):
 		bot.set_context(message.chat_id, 'setup_keys_replace')
-		bot.send_message(get_loc_text('give_replace_words', message.chat_id), message.chat_id, keyboard=[get_loc_text('button_cancel', message.chat_id)])
+		message.reply(get_loc_text('give_replace_words', message.chat_id), keyboard=[get_loc_text('button_cancel', message.chat_id)])
 
 	elif bot.verify_context_message(message, 'setup_keys', get_loc_text('button_delete', message.chat_id)):
 		bot.set_context(message.chat_id, 'setup_keys_delete')
 		bot.context[message.chat_id]['working_keys'] = db_handler.get_user_skeys(message.chat_id)
-		bot.send_message(get_loc_text('give_replace_words', message.chat_id), message.chat_id, keyboard=[get_loc_text('button_done', message.chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
+		message.reply(get_loc_text('give_replace_words', message.chat_id), keyboard=[get_loc_text('button_done', message.chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
 
 	elif bot.verify_context_message(message, 'setup_keys_add'):
 		s_keys_old = db_handler.get_user_skeys(message.chat_id)
@@ -129,45 +128,44 @@ def handle_text(message):
 			for word in msg_words:
 				try:
 					bot.context[message.chat_id]['working_keys'].remove(word)
-					bot.send_message(get_loc_text('deleted_word', message.chat_id).format(word) , message.chat_id, keyboard=[get_loc_text('button_done', chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
+					message.reply(get_loc_text('deleted_word', message.chat_id).format(word), keyboard=[get_loc_text('button_done', chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
 				except ValueError:
-					bot.send_message(get_loc_text('didnt_found_word', message.chat_id).format(word) , message.chat_id, keyboard=[get_loc_text('button_done', chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
+					message.reply(get_loc_text('didnt_found_word', message.chat_id).format(word), keyboard=[get_loc_text('button_done', chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
 
 	elif bot.verify_context_message(message, 'setup_language'):
 		msg_words = parse_string(message.text.lower()).pop()
 		if msg_words == "русский":
 			bot.context[message.chat_id]['lang'] = 'rus'
-			bot.send_message('Установлен русский язык', message.chat_id)
+			message.reply('Установлен русский язык')
 			bot.set_context(message.chat_id, None)
 		elif  msg_words == "english":
 			bot.context[message.chat_id]['lang'] = 'eng'
-			bot.send_message('English language chosen', message.chat_id)
+			message.reply('English language chosen')
 			bot.set_context(message.chat_id, None)
 		else:
-			bot.send_message('I don\'t know this language')
+			message.reply('I don\'t know this language')
 			bot.setup_language(message.chat_id)
 
 	elif bot.verify_context_message(message, 'setup_language_init'):
 		msg_words = parse_string(message.text.lower()).pop()
 		if msg_words == "русский":
 			bot.context[message.chat_id]['lang'] = 'rus'
-			bot.send_message('Установлен русский язык', message.chat_id)
+			message.reply('Установлен русский язык')
 			setup_keys(message.chat_id)
 		elif  msg_words == "english":
 			bot.context[message.chat_id]['lang'] = 'eng'
-			bot.send_message('English language chosen', message.chat_id)
+			message.reply('English language chosen')
 			setup_keys(message.chat_id)
 		else:
-			bot.send_message('I don\'t know this language')
+			message.reply('I don\'t know this language')
 			bot.setup_language(message.chat_id)
 
 	elif bot.verify_context_message(message, 'stop_tacking', get_loc_text('button_yes', message.chat_id)):
 		db_handler.delete_user(message.chat_id)
-		msg = get_loc_text('stoped_tracking', message.chat_id)
-		bot.send_message(msg, message.chat_id)
+		message.reply(get_loc_text('stoped_tracking', message.chat_id))
 		bot.set_context(message.chat_id, None)
 	
 	else:
 		logger.debug('Got random message ' + message.text)
-		bot.send_message('Don\'t understand that command', message.chat_id)
+		message.reply('Don\'t understand that command')
 
