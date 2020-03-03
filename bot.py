@@ -84,7 +84,7 @@ def handle_commands(message):
 	
 @bot.message_handler
 def handle_text(message):
-	if message.text.lower() in [get_loc_text('button_no', message.chat_id), get_loc_text('button_cancel', message.chat_id)]:
+	if message.text.lower() in [get_loc_text('button_no', message.chat_id).lower(), get_loc_text('button_cancel', message.chat_id).lower()]:
 		if bot.context.get(message.chat_id, None):
 			bot.set_context(message.chat_id, None)
 			bot.send_message(get_loc_text('action_cancelled', message.chat_id), message.chat_id)
@@ -93,11 +93,11 @@ def handle_text(message):
 	
 	elif bot.verify_context_message(message, 'setup_keys', get_loc_text('button_add', message.chat_id)):
 		bot.set_context(message.chat_id, 'setup_keys_add')
-		bot.send_message(f'Напишите через запятую слова, которые нужно добавить к вашему списку', message.chat_id, keyboard=[get_loc_text('button_cancel', message.chat_id)])
+		bot.send_message(get_loc_text('give_add_words', message.chat_id), message.chat_id, keyboard=[get_loc_text('button_cancel', message.chat_id)])
 
 	elif bot.verify_context_message(message, 'setup_keys', get_loc_text('button_replace', message.chat_id)):
 		bot.set_context(message.chat_id, 'setup_keys_replace')
-		bot.send_message(get_loc_text('give_add_words', message.chat_id), message.chat_id, keyboard=[get_loc_text('button_cancel', message.chat_id)])
+		bot.send_message(get_loc_text('give_replace_words', message.chat_id), message.chat_id, keyboard=[get_loc_text('button_cancel', message.chat_id)])
 
 	elif bot.verify_context_message(message, 'setup_keys', get_loc_text('button_delete', message.chat_id)):
 		bot.set_context(message.chat_id, 'setup_keys_delete')
@@ -169,5 +169,5 @@ def handle_text(message):
 	
 	else:
 		logger.debug('Got random message ' + message.text)
-		bot.send_message('Не понимаю эту команду', message.chat_id)
+		bot.send_message('Don\'t understand that command', message.chat_id)
 
