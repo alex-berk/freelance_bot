@@ -48,7 +48,7 @@ class TgBot():
 		response = json.loads(r.text)
 		return response
 
-	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False, keyboard=[]):
+	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False, keyboard=None):
 		logger.debug(f"Sending message to {chat_id}")
 		if not chat_id: chat_id = self.admin_chat_id
 
@@ -97,12 +97,10 @@ class TgBot():
 
 	def verify_context_message(self, message, step_name=None, message_text=None):
 		if step_name:
-			print(step_name, self.context.get(message.chat_id, {'name': None})['name'])
-			step_result = self.context.get(message.chat_id, {'name': None})['name'] == step_name.lower()
+			step_result = self.context.get(message.chat_id, {'name': None}).get('name', None) == step_name.lower()
 		else:
 			step_result = True
 		if message_text:
-			print(message_text, message.text.lower())
 			message_result = message.text.lower() == message_text.lower()
 		else:
 			message_result = True
