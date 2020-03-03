@@ -1,4 +1,5 @@
 import os
+import json
 from tgapi import TgBot
 from utils import parse_string, db_handler, log_parser
 import logging
@@ -7,13 +8,29 @@ logger = logging.getLogger('__main__')
 
 bot = TgBot(os.environ.get('BOT_TOKEN'), os.environ.get('CHAT_ID'))
 
-import loc
+with open('localization.json', 'r') as read_file:
+	loc_text = json.load(read_file)
+try:
+	with open('loc_preferences.json', 'r') as read_file:
+		try:
+			bot.context = {int(chat): {'lang': preference} for chat, preference in json.load(read_file).items()}
+		except json.decoder.JSONDecodeError:
+			pass
+except FileNotFoundError:
+	pass
 
-for chat_id, pref in loc.preferences.items():
-	bot.context[chat_id] = {'lang': pref}
+def save_languge_preferences(chat_id, lang):
+	try:
+		with open('loc_preferences.json', 'r') as read_file:
+			current_prefs = json.load(read_file)
+	except (json.decoder.JSONDecodeError, FileNotFoundError):
+		current_prefs = {}
+	with open('loc_preferences.json', 'w') as write_file:
+		current_prefs[str(chat_id)] = lang
+		json.dump(current_prefs, write_file)
 
 def get_loc_text(text_name, chat_id):
-	return loc.msgs[text_name][bot.context[chat_id]['lang']]
+	return loc_text[text_name][bot.context.get(chat_id, {}).get('lang', 'rus')]
 
 def loc_reply(message, text_name, **kwargs):
 	message_text = get_loc_text(text_name, message.chat_id)
@@ -44,7 +61,7 @@ def confirm_keys_setup(chat_id, s_keys):
 def setup_language(chat_id):
 	bot.set_context(chat_id, 'setup_language')
 	bot.context.get(chat_id, {}).get('lang', 'ru')
-	msg = 'Выберите язык'
+	msg = 'Choose your languge / Выберите язык'
 	bot.send_message(msg, chat_id, keyboard=['🇷🇺 Русский', '🇺🇸 English'])
 
 @bot.commands_handler
@@ -131,19 +148,21 @@ def handle_text(message):
 			for word in msg_words:
 				try:
 					bot.context[message.chat_id]['working_keys'].remove(word)
-					message.reply(get_loc_text('deleted_word', message.chat_id).format(word), keyboard=[get_loc_text('button_done', chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
+					message.reply(get_loc_text('deleted_word', message.chat_id).format(word), keyboard=[get_loc_text('button_done', message.chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
 				except ValueError:
-					message.reply(get_loc_text('didnt_found_word', message.chat_id).format(word), keyboard=[get_loc_text('button_done', chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
+					message.reply(get_loc_text('didnt_found_word', message.chat_id).format(word), keyboard=[get_loc_text('button_done', message.chat_id), get_loc_text('button_cancel', message.chat_id)] + bot.context[message.chat_id]['working_keys'])
 
 	elif bot.verify_context_message(message, 'setup_language'):
 		msg_words = parse_string(message.text.lower()).pop()
 		if msg_words == "русский":
 			bot.context[message.chat_id]['lang'] = 'rus'
 			message.reply('Установлен русский язык')
+			save_languge_preferences(message.chat_id, 'rus')
 			bot.set_context(message.chat_id, None)
 		elif  msg_words == "english":
 			bot.context[message.chat_id]['lang'] = 'eng'
 			message.reply('English language chosen')
+			save_languge_preferences(message.chat_id, 'eng')
 			bot.set_context(message.chat_id, None)
 		else:
 			message.reply('I don\'t know this language')
@@ -154,10 +173,12 @@ def handle_text(message):
 		if msg_words == "русский":
 			bot.context[message.chat_id]['lang'] = 'rus'
 			message.reply('Установлен русский язык')
+			save_languge_preferences(message.chat_id, 'rus')
 			setup_keys(message.chat_id)
 		elif  msg_words == "english":
 			bot.context[message.chat_id]['lang'] = 'eng'
 			message.reply('English language chosen')
+			save_languge_preferences(message.chat_id, 'eng')
 			setup_keys(message.chat_id)
 		else:
 			message.reply('I don\'t know this language')
