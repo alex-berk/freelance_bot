@@ -6,24 +6,30 @@ logger = logging.getLogger('__main__')
 
 
 class Message:
-	def __init__(self, text, from_id, username, chat_id, chat_title=None):
+	def __init__(self, text, from_id, username, chat_id, message_id, chat_title, bot):
 		self.text = text
 		self.from_id = from_id
 		self.username = username
 		self.chat_id = chat_id
+		self.message_id = message_id
 		self.chat_title = chat_title
+		self.bot = bot
+
+	def reply(self, message, **kwargs):
+		self.bot.send_message(message, self.chat_id, **kwargs)
 
 	@classmethod
-	def from_dict(cls, msg_dict):
+	def from_dict(cls, msg_dict, bot):
 		text = msg_dict["text"]
 		from_id = msg_dict["from"]["id"]
 		username = msg_dict["from"]["username"]
 		chat_id = msg_dict["chat"]["id"]
+		message_id = msg_dict["message_id"]
 		chat_title = msg_dict["chat"]["title"] if msg_dict["chat"]["type"] == "group" else msg_dict["chat"]["type"]
-		return cls(text, from_id, username, chat_id, chat_title)
+		return cls(text, from_id, username, chat_id, message_id, chat_title, bot)
 
 	def __repr__(self):
-		return f'Message("{self.text}", {self.from_id}, "{self.username}", {self.chat_id}, "{self.chat_title}")'
+		return f'Message("{self.text}", {self.from_id}, "{self.username}", {self.chat_id}, {self.message_id}, "{self.chat_title}")'
 
 	def __str__(self):
 		return self.text
@@ -48,7 +54,7 @@ class TgBot():
 		response = json.loads(r.text)
 		return response
 
-	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False, keyboard=[]):
+	def send_message(self, message, chat_id=None, link=None, callback=None, disable_preview=False, force_reply=False, keyboard=None):
 		logger.debug(f"Sending message to {chat_id}")
 		if not chat_id: chat_id = self.admin_chat_id
 
@@ -97,11 +103,11 @@ class TgBot():
 
 	def verify_context_message(self, message, step_name=None, message_text=None):
 		if step_name:
-			step_result = self.context.get(message.chat_id, {'name': None})['name'] == step_name
+			step_result = self.context.get(message.chat_id, {'name': None}).get('name', None) == step_name.lower()
 		else:
 			step_result = True
 		if message_text:
-			message_result = message.text.lower() == message_text
+			message_result = message.text.lower() == message_text.lower()
 		else:
 			message_result = True
 		return step_result and message_result
@@ -127,7 +133,7 @@ class TgBot():
 		logger.debug('Got response from the Telegram server')
 		if tg_response['result']:
 			resp = tg_response['result'].pop()
-			message = Message.from_dict(resp['message'])
+			message = Message.from_dict(resp['message'], bot=self)
 			if message.text[0] == '/':
 				self.handlers['commands_handler'](message)
 			else:
