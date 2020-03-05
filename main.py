@@ -1,5 +1,3 @@
- #coding=utf-8
-
 import os, logging
 import argparse
 import concurrent.futures
