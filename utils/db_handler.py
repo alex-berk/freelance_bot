@@ -38,7 +38,7 @@ def add_user(id, keys, username, lang):
 	conn = sqlite3.connect('data.db')
 	with conn:
 		keys = ';'.join([''] + keys + ['']) 
-		conn.cursor().execute('INSERT INTO users VALUES (?, ?, ?, ?, 1)', (id, keys, lang, username))
+		conn.cursor().execute('INSERT INTO users(id, search_keys, nickname, lang, active) VALUES (?, ?, ?, ?, 1)', (id, keys, username, lang))
 		conn.commit()
 
 def update_user_keys(id, keys):
