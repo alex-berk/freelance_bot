@@ -115,7 +115,7 @@ class TgBot():
 	def set_context(self, uid, name):
 		try:
 			self.context[uid]['name'] = name
-		except TypeError:
+		except KeyError:
 			self.context[uid] = {'name': name}
 
 	def message_handler(self, handler_func):
