@@ -19,7 +19,7 @@
         <tr>
           <td>{{ user.chat_id }}</td>
           <td>
-            {{ if user.name }}<a href="https://t.me/{{ user.name }}">@{{ user.name }}</a>{{ else }} -- {{ endif }}
+            {% if user.name %}<a href="https://t.me/{{ user.name }}">@{{ user.name }}</a>{% else %} -- {% endif %}
           </td>
           <td>{{ ', '.join(user.keywords[1:-1]) }}</td>
           <td><button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#editModal" data-user_id="{{ user.chat_id }}">Edit</button></td>
