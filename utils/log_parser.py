@@ -124,6 +124,6 @@ def get_sent_messages(log=None):
 	sent_tasks = []
 	sent_task_lines = [line.event.split('for the users ')[1] for line in log if line.event.startswith('Found task')]
 	users_ids = [id[1:-1].split(', ') for id in sent_task_lines]
-	users_ids_flatten = [item for sublist in users_ids for item in sublist]
+	users_ids_flatten = [int(item) for sublist in users_ids for item in sublist]
 	users.update(users_ids_flatten)
 	return users
