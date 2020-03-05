@@ -6,4 +6,3 @@ logs
 *.db-journal
 *.sqbpro
 ubuntu@*
-loc_preferences.json
