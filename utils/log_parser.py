@@ -5,12 +5,11 @@ from collections import namedtuple, Counter
 event = namedtuple('event', ['time', 'module', 'level', 'event'])
 
 
-log_dir = '../logs/'
 def get_current_log():
-	logs = os.listdir(log_dir)
-	current_log = sorted(os.listdir(log_dir)).pop()
+	logs = os.listdir('logs')
+	current_log = sorted(os.listdir('logs')).pop()
 
-	with open(log_dir + current_log, 'r') as log_file:
+	with open('logs/' + current_log, 'r') as log_file:
 		log_lines = log_file.readlines()
 		log = [line[:-1].split(':',3) for line in log_lines]
 		log = [event(*line) for line in log]
@@ -18,8 +17,8 @@ def get_current_log():
 	return log
 
 def get_logs_for_period(q=7, s=1):
-	logs = os.listdir(log_dir)
-	current_week_log = sorted(os.listdir(log_dir), reverse=True)[s:s+q]
+	logs = os.listdir('logs')
+	current_week_log = sorted(os.listdir('logs'), reverse=True)[s:s+q]
 
 	logs = []
 	for log_name in current_week_log:
