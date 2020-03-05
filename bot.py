@@ -117,7 +117,7 @@ def handle_text(message):
 	elif bot.verify_context_message(message, 'setup_keys_init') or bot.verify_context_message(message, 'setup_keys_replace'):
 		s_keys = parse_string(message.text, sep=',')
 		try:
-			db_handler.add_user(message.chat_id, s_keys)
+			db_handler.add_user(message.chat_id, s_keys, message.username, bot.context.get(message.chat_id, {'lang': 'rus'})['lang'])
 		except db_handler.sqlite3.IntegrityError:
 			db_handler.update_user_keys(message.chat_id, s_keys)
 		confirm_keys_setup(message.chat_id, s_keys)
@@ -158,15 +158,14 @@ def handle_text(message):
 			bot.context[message.chat_id]['lang'] = 'rus'
 			message.reply('Установлен русский язык')
 			db_handler.update_user_lang(message.chat_id, 'rus')
-			setup_keys(message.chat_id)
 		elif  msg_words == "english":
 			bot.context[message.chat_id]['lang'] = 'eng'
 			message.reply('English language chosen')
 			db_handler.update_user_lang(message.chat_id, 'eng')
-			setup_keys(message.chat_id)
 		else:
 			message.reply('I don\'t know this language')
 			bot.setup_language(message.chat_id)
+		setup_keys(message.chat_id)
 
 	elif bot.verify_context_message(message, 'stop_tacking', get_loc_text('button_yes', message.chat_id)):
 		db_handler.delete_user(message.chat_id)

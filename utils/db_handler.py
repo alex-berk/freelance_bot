@@ -12,10 +12,10 @@ cursor = conn.cursor()
 try:
 	cursor.execute('''CREATE TABLE users(
 						id integer primary key,
-						nickname text,
 						search_keys text,
+						lang text NOT NULL DEFAULT 'rus',
+						nickname text,
 						active integer NOT NULL DEFAULT 1,
-						lang text NOT NULL DEFAULT 'rus'
 					)''')
 	conn.commit()
 except sqlite3.OperationalError:
@@ -34,10 +34,11 @@ except sqlite3.OperationalError:
 	pass
 
 
-def add_user(id, keys):
+def add_user(id, keys, username, lang):
 	conn = sqlite3.connect('data.db')
 	with conn:
-		conn.cursor().execute('INSERT INTO users VALUES (?, ?)', (id, ';'.join([''] + keys + [''])))
+		keys = ';'.join([''] + keys + ['']) 
+		conn.cursor().execute('INSERT INTO users VALUES (?, ?, ?, ?, 1)', (id, keys, lang, username))
 		conn.commit()
 
 def update_user_keys(id, keys):
