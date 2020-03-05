@@ -10,24 +10,8 @@ bot = TgBot(os.environ.get('BOT_TOKEN'), os.environ.get('CHAT_ID'))
 
 with open('localization.json', 'r') as read_file:
 	loc_text = json.load(read_file)
-try:
-	with open('loc_preferences.json', 'r') as read_file:
-		try:
-			bot.context = {int(chat): {'lang': preference} for chat, preference in json.load(read_file).items()}
-		except json.decoder.JSONDecodeError:
-			pass
-except FileNotFoundError:
-	pass
 
-def save_languge_preferences(chat_id, lang):
-	try:
-		with open('loc_preferences.json', 'r') as read_file:
-			current_prefs = json.load(read_file)
-	except (json.decoder.JSONDecodeError, FileNotFoundError):
-		current_prefs = {}
-	with open('loc_preferences.json', 'w') as write_file:
-		current_prefs[str(chat_id)] = lang
-		json.dump(current_prefs, write_file)
+bot.context = {user.chat_id: {'lang': user.lang} for user in db_handler.get_users()}
 
 def get_loc_text(text_name, chat_id):
 	return loc_text[text_name][bot.context.get(chat_id, {}).get('lang', 'rus')]
@@ -157,12 +141,12 @@ def handle_text(message):
 		if msg_words == "русский":
 			bot.context[message.chat_id]['lang'] = 'rus'
 			message.reply('Установлен русский язык')
-			save_languge_preferences(message.chat_id, 'rus')
+			db_handler.update_user_lang(message.chat_id, 'rus')
 			bot.set_context(message.chat_id, None)
 		elif  msg_words == "english":
 			bot.context[message.chat_id]['lang'] = 'eng'
 			message.reply('English language chosen')
-			save_languge_preferences(message.chat_id, 'eng')
+			db_handler.update_user_lang(message.chat_id, 'eng')
 			bot.set_context(message.chat_id, None)
 		else:
 			message.reply('I don\'t know this language')
@@ -173,12 +157,12 @@ def handle_text(message):
 		if msg_words == "русский":
 			bot.context[message.chat_id]['lang'] = 'rus'
 			message.reply('Установлен русский язык')
-			save_languge_preferences(message.chat_id, 'rus')
+			db_handler.update_user_lang(message.chat_id, 'rus')
 			setup_keys(message.chat_id)
 		elif  msg_words == "english":
 			bot.context[message.chat_id]['lang'] = 'eng'
 			message.reply('English language chosen')
-			save_languge_preferences(message.chat_id, 'eng')
+			db_handler.update_user_lang(message.chat_id, 'eng')
 			setup_keys(message.chat_id)
 		else:
 			message.reply('I don\'t know this language')

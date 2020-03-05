@@ -112,11 +112,11 @@ class TgBot():
 			message_result = True
 		return step_result and message_result
 
-	def set_context(self, id, name):
+	def set_context(self, uid, name):
 		try:
-			self.context[id]['name'] = name
-		except KeyError:
-			self.context[id] = {'name': name}
+			self.context[uid]['name'] = name
+		except TypeError:
+			self.context[uid] = {'name': name}
 
 	def message_handler(self, handler_func):
 		self.handlers['message_handler'] = handler_func 

@@ -4,7 +4,7 @@ from collections import namedtuple
 
 logger = logging.getLogger('__main__')
 
-User = namedtuple('User', ['chat_id', 'keywords'])
+User = namedtuple('User', ['chat_id', 'keywords', 'lang', 'name', 'active'])
 
 conn = sqlite3.connect('data.db')
 cursor = conn.cursor()
@@ -12,7 +12,10 @@ cursor = conn.cursor()
 try:
 	cursor.execute('''CREATE TABLE users(
 						id integer primary key,
-						search_keys text
+						nickname text,
+						search_keys text,
+						active integer NOT NULL DEFAULT 1,
+						lang text NOT NULL DEFAULT 'rus'
 					)''')
 	conn.commit()
 except sqlite3.OperationalError:
@@ -46,8 +49,8 @@ def update_user_keys(id, keys):
 def get_users():
 	conn = sqlite3.connect('data.db')
 	cursor = conn.cursor()
-	cursor.execute("SELECT * FROM users")
-	return [(User(str(row[0]), row[1].split(";"))) for row in cursor.fetchall()]
+	cursor.execute("SELECT id, search_keys, lang, nickname, active FROM users")
+	return [(User(row[0], row[1].split(";"), row[2], row[3], bool(row[4]))) for row in cursor.fetchall()]
 
 def get_user_skeys(user_id):
 	conn = sqlite3.connect('data.db')
@@ -106,3 +109,7 @@ def check_task_link(task_link):
 	cursor = conn.cursor()
 	cursor.execute('SELECT link FROM tasks WHERE link=?', (task_link,))
 	return bool(cursor.fetchone())
+
+def update_user_lang(user_id, lang):
+	with conn:
+		cursor.execute('UPDATE users SET lang=? WHERE id=?', (lang, user_id))

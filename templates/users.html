@@ -8,17 +8,21 @@
        <thead>
          <tr>
            <th>Chat id</th>
+           <th>Nickname</th>
            <th colspan="2">Keywords</th>
            <th>Messages Sent, today</th>
+           <th>Active</th>
          </tr>
        </thead>
        <tbody>
         {% for user in users %}
         <tr>
           <td>{{ user.chat_id }}</td>
+          <td><a href="https://t.me/{{ user.name }}">@{{ user.name }}</a></td>
           <td>{{ ', '.join(user.keywords[1:-1]) }}</td>
           <td><button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#editModal" data-user_id="{{ user.chat_id }}">Edit</button></td>
           <td>{{ sm[user.chat_id] }}</td>
+          <td>{{ user.active }}</td>
         </tr>
         {% endfor %}
        </tbody>
