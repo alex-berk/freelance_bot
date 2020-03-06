@@ -66,8 +66,12 @@ def handle_commands(message):
 		message.reply(status_text, disable_preview=True)
 	
 	elif bot.verify_command(message.text, 'start'):
-		if db_handler.get_user_skeys(message.chat_id):
-			message.reply(get_loc_text('keywords_already_setted_up', message.chat_id))
+		if not db_handler.get_user_status(message.chat_id):
+			db_handler.change_user_status(message.chat_id, 1)
+			loc_reply(message, 'tracking_restarted')
+
+		elif db_handler.get_user_skeys(message.chat_id):
+			loc_reply(message, 'keywords_already_setted_up')
 		else:
 			setup_laguage_init(message.chat_id)
 	
@@ -168,7 +172,7 @@ def handle_text(message):
 		setup_keys(message.chat_id)
 
 	elif bot.verify_context_message(message, 'stop_tacking', get_loc_text('button_yes', message.chat_id)):
-		db_handler.delete_user(message.chat_id)
+		db_handler.change_user_status(message.chat_id)
 		loc_reply(message, 'stoped_tracking')
 		bot.set_context(message.chat_id, None)
 	

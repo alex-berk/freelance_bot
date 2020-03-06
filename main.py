@@ -56,8 +56,8 @@ def tasks_sender(task_list):
 			text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
 			resp = bot.send_message(text, link=task['link'], chat_id=user_id, disable_preview=True)
 			if resp in [400, 403]:
-				logger.warning(f"Bot was kicked from the chat {user_id}. Deleting chat from db.")
-				db_handler.delete_user(user_id)
+				logger.warning(f"Bot was kicked from the chat {user_id}. Deactivating user.")
+				db_handler.change_user_status(user_id)
 
 def format_task(task):
 	if task.get('tags_s'):
