@@ -7,6 +7,7 @@ import concurrent.futures
 
 logger = logging.getLogger('__main__')
 
+
 class Parser:
 	instances = []
 
@@ -20,7 +21,6 @@ class Parser:
 
 	def __repr__(self):
 		return f"{self.__class__.__name__}({', '.join([key + '=' + repr(value) for key, value in self.__dict__.items()])})"
-
 
 	def get(self):
 		query_params = {'url': self.url}
@@ -138,6 +138,7 @@ class JsonParser(Parser):
 		logger.debug(f'Parsed {self.host}')
 		return parsed_objcts
 
+
 if __name__ == '__main__':
 
 	'''Sample parser configs for testing
@@ -186,7 +187,6 @@ if __name__ == '__main__':
 	freelansim = JsonParser(**flnsm_params)
 	freelancehunt = Parser(**frlnchnt_params)
 	guru = JsonParser(**guru_params)
-
 
 	for index, instance in enumerate(Parser.instances):
 		print(index, instance)

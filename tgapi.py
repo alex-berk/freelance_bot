@@ -1,38 +1,8 @@
-import os
 import logging
-import requests, json
+import requests
+import json
 
 logger = logging.getLogger('__main__')
-
-
-class Message:
-	def __init__(self, text, from_id, username, chat_id, message_id, chat_title, bot):
-		self.text = text
-		self.from_id = from_id
-		self.username = username
-		self.chat_id = chat_id
-		self.message_id = message_id
-		self.chat_title = chat_title
-		self.bot = bot
-
-	def reply(self, message, **kwargs):
-		self.bot.send_message(message, self.chat_id, **kwargs)
-
-	@classmethod
-	def from_dict(cls, msg_dict, bot):
-		text = msg_dict["text"]
-		from_id = msg_dict["from"]["id"]
-		username = msg_dict["from"]["username"]
-		chat_id = msg_dict["chat"]["id"]
-		message_id = msg_dict["message_id"]
-		chat_title = msg_dict["chat"]["title"] if msg_dict["chat"]["type"] == "group" else msg_dict["chat"]["type"]
-		return cls(text, from_id, username, chat_id, message_id, chat_title, bot)
-
-	def __repr__(self):
-		return f'Message("{self.text}", {self.from_id}, "{self.username}", {self.chat_id}, {self.message_id}, "{self.chat_title}")'
-
-	def __str__(self):
-		return self.text
 
 
 class TgBot():
@@ -42,7 +12,6 @@ class TgBot():
 		self.username = self.call_tg_api('getMe')["result"]["username"]
 		self.context = {}
 		self.handlers = {}
-
 
 	def call_tg_api(self, method, data={}, timeout=60):
 		url = f'https://api.telegram.org/bot{self.token}/{method}'
@@ -77,7 +46,7 @@ class TgBot():
 			except ValueError:
 				anchor, url = ('Просмотреть', link)
 			reply_markup['inline_keyboard'] = [[{'text': anchor, 'url': url}]]
-		
+
 		if callback:
 			text, data = callback
 			reply_markup['inline_keyboard'] = [[{'text': text, 'callback_data': data}]]
@@ -85,7 +54,7 @@ class TgBot():
 
 		params = {'chat_id': chat_id, 'text': message, 'parse_mode':'html', 'disable_web_page_preview': disable_preview, 'force_reply': force_reply}
 		params['reply_markup'] = json.dumps(reply_markup)
-		
+
 		tg_response = self.call_tg_api('sendMessage', params)
 		if not tg_response['ok']:
 			logger.error(f"Message not been sent!, Got response: {tg_response}; {chat_id}; {link}; {disable_preview}")
@@ -119,7 +88,7 @@ class TgBot():
 			self.context[uid] = {'name': name}
 
 	def message_handler(self, handler_func):
-		self.handlers['message_handler'] = handler_func 
+		self.handlers['message_handler'] = handler_func
 
 	def commands_handler(self, handler_func):
 		self.handlers['commands_handler'] = handler_func
@@ -153,3 +122,33 @@ class TgBot():
 				row, counter = [], 0
 		if row: keyboard.append(row)
 		return keyboard
+
+
+class Message:
+	def __init__(self, text, from_id, username, chat_id, message_id, chat_title, bot):
+		self.text = text
+		self.from_id = from_id
+		self.username = username
+		self.chat_id = chat_id
+		self.message_id = message_id
+		self.chat_title = chat_title
+		self.bot = bot
+
+	def reply(self, text, **kwargs):
+		self.bot.send_message(text, self.chat_id, **kwargs)
+
+	@classmethod
+	def from_dict(cls, msg_dict, bot):
+		text = msg_dict["text"]
+		from_id = msg_dict["from"]["id"]
+		username = msg_dict["from"]["username"]
+		chat_id = msg_dict["chat"]["id"]
+		message_id = msg_dict["message_id"]
+		chat_title = msg_dict["chat"]["title"] if msg_dict["chat"]["type"] == "group" else msg_dict["chat"]["type"]
+		return cls(text, from_id, username, chat_id, message_id, chat_title, bot)
+
+	def __repr__(self):
+		return f'Message("{self.text}", {self.from_id}, "{self.username}", {self.chat_id}, {self.message_id}, "{self.chat_title}")'
+
+	def __str__(self):
+		return self.text

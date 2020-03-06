@@ -147,14 +147,14 @@ def handle_text(message):
 			message.reply('Установлен русский язык')
 			db_handler.update_user_lang(message.chat_id, 'rus')
 			bot.set_context(message.chat_id, None)
-		elif  msg_words == "english":
+		elif msg_words == "english":
 			bot.context[message.chat_id]['lang'] = 'eng'
 			message.reply('English language chosen')
 			db_handler.update_user_lang(message.chat_id, 'eng')
 			bot.set_context(message.chat_id, None)
 		else:
 			message.reply('I don\'t know this language')
-			bot.setup_language(message.chat_id)
+			setup_language(message.chat_id)
 
 	elif bot.verify_context_message(message, 'setup_language_init'):
 		msg_words = parse_string(message.text.lower()).pop()
@@ -162,13 +162,13 @@ def handle_text(message):
 			bot.context[message.chat_id]['lang'] = 'rus'
 			message.reply('Установлен русский язык')
 			db_handler.update_user_lang(message.chat_id, 'rus')
-		elif  msg_words == "english":
+		elif msg_words == "english":
 			bot.context[message.chat_id]['lang'] = 'eng'
 			message.reply('English language chosen')
 			db_handler.update_user_lang(message.chat_id, 'eng')
 		else:
 			message.reply('I don\'t know this language')
-			bot.setup_language(message.chat_id)
+			setup_language(message.chat_id)
 		setup_keys(message.chat_id)
 
 	elif bot.verify_context_message(message, 'stop_tacking', get_loc_text('button_yes', message.chat_id)):

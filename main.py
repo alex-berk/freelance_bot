@@ -1,12 +1,11 @@
-import os, logging
+import os
+import logging
 import argparse
 import concurrent.futures
 import time, datetime
-import requests
-import json, csv
-from utils import log_parser, db_handler, parse_string
+from utils import db_handler, parse_string
 from bot import bot
-from parsers import Parser, JsonParser
+from parsers import Parser
 from dashboard import app
 
 

@@ -10,5 +10,7 @@ In order to work you'll need to setup:
 * DASHBOARD_PASS	_pass for the dashboard login_
 
 ## parameters
-You can run with parameter `parser` to run only parser part, `bot` to run only bot part or `dashboard` to run only dashboard part.
+You can run with parameter `parser` to run only parser part, `bot` to run only bot part or `dashboard` to run only
+dashboard part.
+
 When running dashboard you can specify host and port with `-host` and `-port` arguments
