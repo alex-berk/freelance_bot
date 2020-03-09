@@ -11,7 +11,10 @@ class TgBot():
 		self.admin_chat_id = int(admin_chat_id)
 		self.username = self.call_tg_api('getMe')["result"]["username"]
 		self.context = {}
-		self.handlers = {}
+		self.handlers = {
+			'message_handler': lambda x: None,
+			'commands_handler': lambda x: None,
+		}
 
 	def call_tg_api(self, method, data={}, timeout=60):
 		url = f'https://api.telegram.org/bot{self.token}/{method}'
