@@ -5,7 +5,7 @@ from flask_login import LoginManager, UserMixin, login_user, current_user, logou
 from flask_bcrypt import Bcrypt
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired
-from utils import log_parser, db_handler, parse_string
+from utils import DBHandler, log_parser, parse_string
 
 
 app = Flask(__name__)
@@ -16,6 +16,8 @@ bcrypt.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
+
+db_handler = DBHandler('data.db')
 
 @login_manager.user_loader
 def load_user(user_id):

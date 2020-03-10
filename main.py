@@ -3,7 +3,7 @@ import logging
 import argparse
 import concurrent.futures
 import time, datetime
-from utils import db_handler, parse_string
+from utils import DBHandler, parse_string
 from bot import bot
 from parsers import Parser
 from dashboard import app
@@ -25,6 +25,9 @@ stream_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', '%H:%
 logger.addHandler(stream_handler)
 
 a_date = datetime.date.today()
+
+db_handler = DBHandler('data.db')
+db_handler.create_db()
 
 def set_file_logger():
 	logger.handlers = [handler for handler in logger.handlers if handler.name != 'file_handler']

@@ -1,12 +1,13 @@
 import os
 import json
 from tgapi import TgBot
-from utils import parse_string, db_handler, log_parser
+from utils import DBHandler, parse_string, log_parser
 import logging
 
 logger = logging.getLogger('__main__')
 
 bot = TgBot(os.environ.get('BOT_TOKEN'), os.environ.get('CHAT_ID'))
+db_handler = DBHandler('data.db')
 
 with open('localization.json', 'r') as read_file:
 	loc_text = json.load(read_file)
