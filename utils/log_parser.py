@@ -16,6 +16,7 @@ def get_current_log():
 
 	return log
 
+
 def get_logs_for_period(q=7, s=1):
 	logs = os.listdir('logs')
 	current_week_log = sorted(os.listdir('logs'), reverse=True)[s:s+q]
@@ -37,6 +38,7 @@ def get_last_telegram_response(log=None):
 		if line.event == 'Got response from the Telegram server':
 			return(line.time)
 
+
 def get_all_hosts(log=None):
 	if not log:
 		log = get_current_log()
@@ -45,6 +47,7 @@ def get_all_hosts(log=None):
 		if line.event.startswith('Sending request to http'):
 			hosts.add(line.event[19:])
 	return hosts
+
 
 def get_last_parsing(log=None, site=''):
 	if not log:
@@ -61,6 +64,7 @@ def get_last_parsing(log=None, site=''):
 				break
 	return hosts_time
 
+
 def get_new_tasks_q(log=None, site=''):
 	if not log:
 		log = get_current_log()
@@ -75,6 +79,7 @@ def get_new_tasks_q(log=None, site=''):
 		return hosts[site]
 	return hosts
 
+
 def get_new_tasks_q_wdays(log=None, site=None):
 	if not log:
 		log = get_logs_for_period()
@@ -87,6 +92,7 @@ def get_new_tasks_q_wdays(log=None, site=None):
 	hosts.update(new_task_lines)
 	return hosts
 
+
 def get_sent_tasks_q(log=None, site=''):
 	if not log:
 		log = get_current_log()
@@ -98,6 +104,7 @@ def get_sent_tasks_q(log=None, site=''):
 		return tasks[site]
 	return tasks
 
+
 def get_sent_tasks_q_wdays(log=None, site=None):
 	if not log:
 		log = get_logs_for_period()
@@ -107,8 +114,12 @@ def get_sent_tasks_q_wdays(log=None, site=None):
 	else:
 		sent_task_lines = [line.time.split(';')[0] for line in log if line.event.startswith('Found task') and site in line.event]
 	tasks = Counter()
-	tasks.update([line for line in sent_task_lines])
+	if sent_task_lines:
+		tasks.update([line for line in sent_task_lines])
+	else:
+		tasks
 	return tasks
+
 
 def get_sent_tasks_list(log=None, user_id=''):
 	if not log:
@@ -116,6 +127,7 @@ def get_sent_tasks_list(log=None, user_id=''):
 	sent_tasks_lines = [line.event for line in log if "for the users" in line.event and str(user_id) in line.event]
 	sent_tasks = [line.split('\'')[1] for line in sent_tasks_lines]
 	return sent_tasks
+
 
 def get_sent_messages(log=None):
 	if not log:

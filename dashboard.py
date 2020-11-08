@@ -30,8 +30,8 @@ class User(UserMixin):
 		super().__init__()
 		self.username = username
 		self.password = bcrypt.generate_password_hash(password).decode('utf-8')
-		self.id = max(self.__class__.users) + 1
-		self.__class__.users[self.id] = self
+		self.id = max(self.users) + 1
+		self.users[self.id] = self
 
 	def get_id(self):
 		return self.id
@@ -75,9 +75,13 @@ def get_dashboard_data():
 	ntdy = log_parser.get_new_tasks_q_wdays()
 	stdy = log_parser.get_sent_tasks_q_wdays()
 
+	composed = {k:(v, stdy.get(k, 0)) for (k, v) in ntdy.items()}
+	composed = {k:(v[0], v[1], round((v[1]/v[0])*100, 2)) for (k, v) in composed.items()}
+
 	proc_sent_graph = list( map(lambda x, y: round((x[1] / y[1]) * 100, 2), sorted(stdy.items()), sorted(ntdy.items())) )
 
 	legend_days = [i[0] for i in sorted(ntdy.items())]
+	legend_days = composed.keys()
 	wnt = [i[1] for i in sorted(ntdy.items())]
 	wst = [i[1] for i in sorted(stdy.items())]
 
@@ -89,8 +93,7 @@ def get_dashboard_data():
 	return {'lt':lt, 'lp':lp, 'nt':nt, 'st':st, 'proc_sent':proc_sent, 'wnt':wnt, 'wst':wst, 'legend_days':legend_days, 'proc_sent_graph':proc_sent_graph, 'snt':snt, 'sst':sst}
 
 
-@app.route('/dashboard', methods=['GET', 'POST'])
-@login_required
+@app.route('/', methods=['GET', 'POST'])
 def home():
 	if request.method == 'POST':
 		site_filter = request.json.get('site_filter')
@@ -130,7 +133,7 @@ class LoginForm(FlaskForm):
 	remember = BooleanField('Remember Me')
 	submit = SubmitField('Login')
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
 	if current_user.is_authenticated:
 		return redirect(url_for('home'))

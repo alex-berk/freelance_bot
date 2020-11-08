@@ -5,7 +5,7 @@ import json
 logger = logging.getLogger('__main__')
 
 
-class TgBot():
+class TgBot:
 	def __init__(self, token, admin_chat_id):
 		self.token = token
 		self.admin_chat_id = int(admin_chat_id)

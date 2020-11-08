@@ -14,16 +14,20 @@ with open('localization.json', 'r') as read_file:
 
 bot.context = {user.chat_id: {'lang': user.lang} for user in db_handler.get_users()}
 
+
 def get_loc_text(text_name, chat_id):
 	return loc_text[text_name][bot.context.get(chat_id, {}).get('lang', 'rus')]
+
 
 def loc_reply(message, text_name, **kwargs):
 	message_text = get_loc_text(text_name, message.chat_id)
 	message.reply(message_text, **kwargs)
 
+
 def setup_laguage_init(chat_id):
 	bot.set_context(chat_id, 'setup_language_init')
 	bot.send_message('What language do you prefer?', chat_id, keyboard=['🇷🇺 Русский', '🇺🇸 English'])
+
 
 def setup_keys(chat_id):
 	current_keys = db_handler.get_user_skeys(chat_id)
@@ -37,17 +41,20 @@ def setup_keys(chat_id):
 		bot.send_message('You can choose language with the command /language', chat_id)
 		bot.send_message(setup_text, chat_id, keyboard=[get_loc_text('button_cancel', chat_id)])
 
+
 def confirm_keys_setup(chat_id, s_keys):
 	msg = get_loc_text('confirm_text', chat_id).format(", ".join(s_keys))
 	bot.send_message(msg, chat_id)
 	bot.send_sticker('CAADAgADBwIAArD72weq7luNKMN99BYE', chat_id)
 	bot.set_context(chat_id, None)
 
+
 def setup_language(chat_id):
 	bot.set_context(chat_id, 'setup_language')
 	bot.context.get(chat_id, {}).get('lang', 'ru')
 	msg = 'Choose your languge / Выберите язык'
 	bot.send_message(msg, chat_id, keyboard=['🇷🇺 Русский', '🇺🇸 English'])
+
 
 @bot.commands_handler
 def handle_commands(message):
@@ -90,6 +97,7 @@ def handle_commands(message):
 		bot.set_context(message.chat_id, None)
 		loc_reply(message, 'action_cancelled')
 	
+
 @bot.message_handler
 def handle_text(message):
 	if message.text.lower() in [get_loc_text('button_no', message.chat_id).lower(), get_loc_text('button_cancel', message.chat_id).lower()]:
