@@ -12,7 +12,10 @@ db_handler = DBHandler('data.db')
 with open('localization.json', 'r') as read_file:
 	loc_text = json.load(read_file)
 
-bot.context = {user.chat_id: {'lang': user.lang} for user in db_handler.get_users()}
+try:
+	bot.context = {user.chat_id: {'lang': user.lang} for user in db_handler.get_users()}
+except:
+	bot.context = {}
 
 
 def get_loc_text(text_name, chat_id):
