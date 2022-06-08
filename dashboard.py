@@ -40,6 +40,7 @@ class User(UserMixin):
 	def get(cls, id):
 		return cls.users.get(id, None)
 
+
 user_login = os.environ.get('DASHBOARD_LOGIN')
 user_pass = os.environ.get('DASHBOARD_PASS')
 User(user_login, user_pass)
