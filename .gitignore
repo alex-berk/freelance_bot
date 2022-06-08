@@ -6,3 +6,5 @@ logs
 *.db-journal
 *.sqbpro
 ubuntu@*
+.idea
+.DS_Store
