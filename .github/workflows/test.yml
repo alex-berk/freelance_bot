@@ -16,6 +16,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          path: main
+
+      - name: Checkout other repo
+        uses: actions/checkout@v3
+        with:
+          repository: alex-berk/flask_blog
+          path: blog
 
       - name: list stuff
         run: ls
