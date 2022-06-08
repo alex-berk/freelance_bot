@@ -27,3 +27,9 @@ jobs:
 
       - name: list stuff
         run: ls
+
+      - name: list main
+        run: ls main
+
+      - name: list blog
+        run: ls blog
