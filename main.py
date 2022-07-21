@@ -1,73 +1,142 @@
 import os
+import logging
+import argparse
+import concurrent.futures
 import time, datetime
-import requests
-import json
+from utils import DBHandler, parse_string
+from bot import bot
+from parsers import Parser
+from dashboard import app
+
+argparser = argparse.ArgumentParser(
+    description='You can specify whether you want to run only parser or bot part of the script')
+argparser.add_argument('part', nargs="*", default=['all'],
+                       help='Name of the part you want to run (bot, parser or dashboard)')
+argparser.add_argument('-port', default=5000, help='Port to run dashboard on')
+argparser.add_argument('-host', default='127.0.0.1', help='Host to run dashboard on')
+args = argparser.parse_args()
+
+logger = logging.getLogger('__main__')
+logger.setLevel(logging.DEBUG)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', '%H:%M:%S'))
+
+logger.addHandler(stream_handler)
+
+a_date = datetime.date.today()
+
+db_handler = DBHandler('data.db')
+db_handler.create_db()
 
 
-def bot_send_msg(token, chat, text):
-	r = requests.get(f'https://api.telegram.org/bot{token}/sendMessage?chat_id={chat}&text={text}')
-	success = json.loads(r.text)['ok']
-	if not success:
-		print('Message not been sent!, Got response:\n', r.text, text)
-	return success
+def set_file_logger():
+    logger.handlers = [handler for handler in logger.handlers if handler.name != 'file_handler']
 
-def keyword_search(keywords, body):
-	try:
-		body = body.lower().split()
-	except AttributeError:
-		body = [item.lower() for item in body]
-	search = (word in body for word in keywords)
-	for match in search:
-		if match:
-			return match
-	return match
+    if not os.path.exists('logs'): os.mkdir('logs')
+    file_handler = logging.FileHandler(os.path.join('logs', str(a_date) + '.log'))
+    formatter = logging.Formatter('%(asctime)s:%(module)s:%(levelname)s:%(message)s', '%H-%M-%S')
+
+    file_handler.setFormatter(formatter)
+    file_handler.set_name('file_handler')
+    logger.addHandler(file_handler)
+
+
+set_file_logger()
+
 
 def tasks_sender(task_list):
-	for task in task_list[::-1]:
-		if task['id'] not in processed_tasks:
-			print(task['title'], task['price'])
-		if task['id'] not in processed_tasks and keyword_search(keywords, task['title']) or keyword_search(keywords, task['tags']):
-			title = task['title']
-			price = task['price']
-			url = task['url']
-			tags = ', '.join(task['tags'])
-			msg = f'[{title}]({url})\n*{price}*\n_{tags}_'
-			bot_send_msg(bot_token, chat_id, msg)
+    for task in task_list[::-1]:
+        if task['tags']:
+            search_body = set(parse_string(task['title']) + task['tags'])
+        else:
+            search_body = parse_string(task['title'])
+        relevant_users = db_handler.get_relevant_users_ids(search_body)
+        if relevant_users: logger.debug(f"Found task {task['link'], task['tags']} for the users {relevant_users}")
+        for user_id in relevant_users:
+            logger.debug(f"Sending task {task['link']}")
+            tags = ', '.join(task['tags']) if task['tags'] else ''
+            price_usd = '<i>(~ ' + '{:,}'.format(round(task['price_usd'])).replace(',', ' ') + '$)</i>' if task[
+                'price_usd'] else ''
+            price = ' '.join([str(task['price']), task['currency'], price_usd])
+            if task['price_format'] == 'per_hour': price += ' <i>за час</i>'
+            text = f"<b>{task['title']}</b>\n{price}\n<code>{tags}</code>"
+            resp = bot.send_message(text, link=task['link'], chat_id=user_id, disable_preview=True)
+            if resp in [400, 403]:
+                logger.warning(f"Bot was kicked from the chat {user_id}. Deactivating user.")
+                db_handler.change_user_status(user_id)
 
-def get_tasks(retry=False):
-	url = 'https://freelansim.ru/tasks?per_page=25&page=1'
-	headers = {	'User-Agent':'Python Telegram bot',
-				'Accept': 'application/json',
-				'X-App-Version': '1'
-			}
-	try:
-		r = requests.get(url, headers=headers)
-		if retry: bot_send_msg(bot_token, chat_id, 'Parser is up again')
-	except ConnectionError:
-		bot_send_msg(bot_token, chat_id, 'Parser is down. Going to try to reconnect in 1 minute.')
-		time.sleep(60)
-		get_tasks(retry=True)
-	tasks = json.loads(r.text)['tasks']
-	tasks_to_send = []
-	for task in tasks:
-		if task['id'] not in processed_tasks:
-			tasks_to_send.append({'title': task['title'], 'id': task['id'],
-								'price': '{} / {}'.format(task['price']['value'], task['price']['type']),
-								'tags': [tag['name'] for tag in task['tags']],
-								'url': 'https://freelansim.ru' + task['href']})
-	return tasks_to_send
+
+def format_task(task):
+    if task.get('tags_s'):
+        task['tags'] = [i.lower().strip() for i in task['tags_s'].split(',')]
+
+    if type(task['tags']) is not list:
+        task['tags'] = [task['tags']]
+
+    if task['price'] and task['price'][-1] == '₽':
+        task['price'], task['currency'] = task['price'][:-2], task['price'][-1]
+
+    if task['price'].strip() == '': task['price'] = 'Договорная'
+
+    if task['currency'] == '₽':
+        task['price_usd'] = int(task['price'].replace(' ', '')) * 0.015
+    elif task['currency'] == '₴':
+        task['price_usd'] = int(task['price'].replace(' ', '')) * 0.04
+    else:
+        task['price_usd'] = ''
+
+    return task
+
+
+def parser():
+    global a_date
+    parsed_tasks_links = []
+
+    Parser.get_gdoc_config('1VGObmBB7RvgBtBUGW7lXVPvm6_m96BJpjFIH_qkZGBM')
+
+    while True:
+            a_date = datetime.date.today()
+            set_file_logger()
+
+        parsed_tasks = []
+        for batch in Parser.parse_all():
+            parsed_tasks.extend(batch)
+        new_tasks = [task for task in parsed_tasks if
+                     task['link'] not in parsed_tasks_links and not db_handler.check_task_link(task['link'])]
+        logger.debug(f"New tasks {[task['link'] for task in new_tasks]}")
+
+        for task in new_tasks:
+            task = format_task(task)
+            print(f"{', '.join([task['title'], task['price'], task['currency'], task['price_format']])}")
+            logger.debug(f"Sending task {task['link']} to db")
+            db_handler.add_task(task)
+        tasks_sender(new_tasks)
+        parsed_tasks_links = [task['link'] for task in parsed_tasks]
+        time.sleep(5)
+
+
+def bot_listener():
+    bot.polling()
+
 
 if __name__ == '__main__':
-	bot_token = os.environ['BOT_TOKEN']
-	chat_id = os.environ['CHAT_ID']
-	processed_tasks = []
-	keywords = ['python', 'питон', 'пайтон', 'парс', 'спарсить', 'парсинг', 'телеграм', 'телеграмм', 'telegram', 'bot', 'бот', 'modx', 'seo', 'сео', 'продвижение', 'продвинуть']
+    logger.debug('Started')
 
-	processed_tasks = [task['id'] for task in get_tasks()]
-	while True:
-		tasks = get_tasks()
-		print('\n[{}] Sent request'.format(datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')))
-		new_tasks = [task for task in tasks if task not in processed_tasks]
-		tasks_sender(new_tasks)
-		processed_tasks.extend([task['id'] for task in new_tasks])
-		time.sleep(60 * 5)
+    inline_argument = args.part.pop()
+    if inline_argument == 'parser':
+        parser()
+    elif inline_argument == 'bot':
+        bot_listener()
+    elif inline_argument == 'dashboard':
+        host, port = args.host, args.port
+        app.run(debug=True, host=host, port=port)
+    elif inline_argument == 'all':
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            threads = [executor.submit(parser), executor.submit(bot_listener), executor.submit(app.run)]
+
+            for f in concurrent.futures.as_completed(threads):
+                f.result()
+    else:
+        raise KeyError('Invalid argument')

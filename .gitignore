@@ -1,3 +1,10 @@
 .env
 __pycache__
 todo.txt
+logs
+*.db
+*.db-journal
+*.sqbpro
+ubuntu@*
+.idea
+.DS_Store
